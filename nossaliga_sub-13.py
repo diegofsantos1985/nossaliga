@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Estilização CSS customizada
+# Estilização CSS customizada (Otimizada para telemóveis e computadores)
 st.markdown(
     """
     <style>
@@ -118,25 +118,31 @@ st.markdown(
         font-size: 11px;
     }
 
-    /* ESTILIZAÇÃO DAS SUB-ABAS (ST.TABS) */
+    /* ESTILIZAÇÃO GLOBAL DAS ABAS (ST.TABS) - AJUSTADO PARA MÓVEL E DESKTOP */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 12px;
+        gap: 8px;
         background-color: transparent;
         border-bottom: none !important;
         margin-bottom: 20px;
+        flex-wrap: wrap;
     }
 
     .stTabs [data-baseweb="tab"] {
         background-color: #110888 !important;
         color: #ffffff !important;
-        border-radius: 10px !important;
-        padding: 12px 24px !important;
+        border-radius: 8px !important;
+        padding: 10px 16px !important;
         font-weight: 700 !important;
-        font-size: 14px !important;
+        font-size: 12px !important;
         border: none !important;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15) !important;
         transition: all 0.2s ease-in-out !important;
         height: auto !important;
+        white-space: nowrap !important;
+    }
+
+    .stTabs [data-baseweb="tab"] * {
+        color: #ffffff !important;
     }
 
     .stTabs [data-baseweb="tab"]:hover {
@@ -150,6 +156,10 @@ st.markdown(
         color: #ffffff !important;
         border: 2px solid #3b82f6 !important;
         box-shadow: 0 4px 12px rgba(17, 8, 136, 0.4) !important;
+    }
+
+    .stTabs [aria-selected="true"] * {
+        color: #ffffff !important;
     }
 
     .stTabs [data-baseweb="tab-highlight"] {
