@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Estilização CSS customizada (Otimizada para eliminar sombras/fantasmas nas fontes)
+# Estilização CSS customizada (Otimizada para eliminar sombras e forçar fundos azuis sólidos)
 st.markdown(
     """
     <style>
@@ -35,6 +35,13 @@ st.markdown(
     }
 
     .stApp { background-color: #f4f6f9; }
+    
+    /* ELIMINAÇÃO TOTAL DE SOMBRAS E FANTASMAS NAS FONTES */
+    * {
+        text-shadow: none !important;
+        -webkit-font-smoothing: antialiased !important;
+    }
+
     .header-box {
         background: linear-gradient(135deg, #160e91, #215ea0);
         padding: 24px;
@@ -43,9 +50,27 @@ st.markdown(
         margin-bottom: 22px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.15);
     }
-    .header-title { font-size: 28px; font-weight: 800; margin: 0; color: #ffffff; text-shadow: none !important; }
-    .header-subtitle { font-size: 14px; color: #f8f063; margin-top: 4px; font-weight: 600; text-shadow: none !important; }
+    .header-title { font-size: 28px; font-weight: 800; margin: 0; color: #ffffff !important; }
+    .header-subtitle { font-size: 14px; color: #f8f063; margin-top: 4px; font-weight: 600; }
     
+    /* CAIXA DE TÍTULO DE SEÇÃO COM FUNDO AZUL SÓLIDO (PADRÃO SOLICITADO) */
+    .section-header-box {
+        background-color: #110888 !important;
+        color: #ffffff !important;
+        padding: 14px 20px !important;
+        border-radius: 8px !important;
+        font-size: 18px !important;
+        font-weight: 800 !important;
+        margin-bottom: 20px !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .section-header-box span, .section-header-box div {
+        color: #ffffff !important;
+    }
+
     /* Metrics Cards */
     .metric-card {
         background-color: #ffffff;
@@ -118,7 +143,7 @@ st.markdown(
         font-size: 11px;
     }
 
-    /* ESTILIZAÇÃO GLOBAL DAS ABAS (ST.TABS) - CORRIGIDO CONTRA FANTASMAS/SOMBRAS */
+    /* ESTILIZAÇÃO GLOBAL DAS ABAS (ST.TABS) */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
         background-color: transparent;
@@ -135,15 +160,12 @@ st.markdown(
         font-weight: 700 !important;
         font-size: 12px !important;
         border: none !important;
-        box-shadow: none !important;
-        text-shadow: none !important;
         height: auto !important;
         white-space: nowrap !important;
     }
 
     .stTabs [data-baseweb="tab"] * {
         color: #ffffff !important;
-        text-shadow: none !important;
     }
 
     .stTabs [data-baseweb="tab"]:hover {
@@ -154,13 +176,10 @@ st.markdown(
         background-color: #080352 !important;
         color: #ffffff !important;
         border: 2px solid #3b82f6 !important;
-        box-shadow: none !important;
-        text-shadow: none !important;
     }
 
     .stTabs [aria-selected="true"] * {
         color: #ffffff !important;
-        text-shadow: none !important;
     }
 
     .stTabs [data-baseweb="tab-highlight"] {
@@ -195,7 +214,6 @@ st.markdown(
     div[data-testid="stSelectbox"] [data-baseweb="select"] * {
         color: #110888 !important;
         font-weight: 800 !important;
-        text-shadow: none !important;
     }
 
     .btn-limpar-container {
@@ -222,7 +240,6 @@ st.markdown(
         text-align: left;
         padding: 6px 8px;
         font-size: 11px;
-        text-shadow: none !important;
     }
     .custom-table td {
         padding: 5px 8px;
@@ -231,7 +248,6 @@ st.markdown(
         color: #110888 !important;
         font-weight: 800 !important;
         white-space: nowrap;
-        text-shadow: none !important;
     }
     .custom-table tr:hover {
         background-color: #f8fafc;
@@ -242,7 +258,6 @@ st.markdown(
         gap: 6px;
         font-weight: 800;
         color: #110888 !important;
-        text-shadow: none !important;
     }
     .team-logo {
         width: 18px;
@@ -281,6 +296,9 @@ def carregar_dados_url(url):
         return soup
     except Exception:
         return None
+
+def renderizar_cabecalho_secao(titulo):
+    st.markdown(f'<div class="section-header-box">{titulo}</div>', unsafe_allow_html=True)
 
 def extrair_tabela_unica(table):
     rows = []
@@ -455,8 +473,8 @@ def formatar_equipe_com_escudo(nome_equipe, mapa_escudos):
             break
 
     if url_escudo:
-        return f'<div class="team-cell"><img src="{url_escudo}" class="team-logo" /><span style="color: #110888 !important; font-weight: 800 !important; text-shadow: none !important;">{nome_clean}</span></div>'
-    return f'<span style="color: #110888 !important; font-weight: 800 !important; text-shadow: none !important;">{nome_clean}</span>'
+        return f'<div class="team-cell"><img src="{url_escudo}" class="team-logo" /><span style="color: #110888 !important; font-weight: 800 !important;">{nome_clean}</span></div>'
+    return f'<span style="color: #110888 !important; font-weight: 800 !important;">{nome_clean}</span>'
 
 def formatar_tabela_classificacao_oficial(df, mapa_escudos):
     if df.empty:
@@ -480,7 +498,7 @@ def formatar_tabela_classificacao_oficial(df, mapa_escudos):
 
             celula_classificacao = (
                 f'<div style="display: flex; align-items: center; gap: 8px;">'
-                f'<span style="font-weight: 800 !important; color: #110888 !important; text-shadow: none !important; min-width: 20px;">{pos_str}</span>'
+                f'<span style="font-weight: 800 !important; color: #110888 !important; min-width: 20px;">{pos_str}</span>'
                 f'{eq_fmt}'
                 f'</div>'
             )
@@ -799,7 +817,7 @@ if opcao == "Início":
 
 elif opcao == "Classificação Sub-13":
     botao_voltar_inicio("classificacao")
-    st.subheader("📊 Classificação — Sub-13 Masculino")
+    renderizar_cabecalho_secao("📊 Classificação — Sub-13 Masculino")
     
     df_geral_raw, df_ga_raw, df_gb_raw = obter_todas_tabelas_classificacao()
     
@@ -832,7 +850,7 @@ elif opcao == "Classificação Sub-13":
 
 elif opcao == "Jogos":
     botao_voltar_inicio("jogos")
-    st.subheader("📅 Tabela de Jogos — Sub-13 Masculino")
+    renderizar_cabecalho_secao("📅 Tabela de Jogos — Sub-13 Masculino")
     df_jogos_todos = obter_df_jogos()
     
     if not df_jogos_todos.empty:
@@ -872,7 +890,7 @@ elif opcao == "Jogos":
 
 elif opcao == "Artilharia":
     botao_voltar_inicio("artilharia")
-    st.subheader("🎯 Artilharia — Sub-13 Masculino")
+    renderizar_cabecalho_secao("🎯 Artilharia — Sub-13 Masculino")
     soup = carregar_dados_url(URL_ARTILHARIA)
     if soup:
         dfs_art = extrair_tabelas_soup(soup)
@@ -918,7 +936,7 @@ elif opcao == "Artilharia":
 
 elif opcao == "Cartões Amarelos e Vermelhos":
     botao_voltar_inicio("cartoes")
-    st.subheader("📋 Controle Oficial de Cartões — Sub-13 Masculino")
+    renderizar_cabecalho_secao("📋 Controle Oficial de Cartões — Sub-13 Masculino")
     soup = carregar_dados_url(URL_CARTOES)
     
     amarelos_list = []
@@ -978,7 +996,7 @@ elif opcao == "Cartões Amarelos e Vermelhos":
 
 elif opcao == "Suspensão":
     botao_voltar_inicio("suspensao")
-    st.subheader("🚫 Controle de Suspensões e Penalizações — Sub-13 Masculino")
+    renderizar_cabecalho_secao("🚫 Controle de Suspensões e Penalizações — Sub-13 Masculino")
     soup = carregar_dados_url(URL_SUSPENSOES)
     
     if soup:
