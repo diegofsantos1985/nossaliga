@@ -256,7 +256,7 @@ HEADERS = {
 }
 
 # -----------------------------------------------------------------------------
-# FUNÇÕES DE RASPAGEM E UTILITÁRIOS
+# FUNÇÕES DE RASPAGEM E UTILITÁRIOS (ROBUSTA SEM DEPENDER DE LXML)
 # -----------------------------------------------------------------------------
 @st.cache_data(ttl=60)
 def carregar_dados_url(url):
@@ -270,6 +270,28 @@ def carregar_dados_url(url):
     except Exception as e:
         st.error(f"Erro de ligação ao servidor: {e}")
         return None
+
+def extrair_tabelas_soup(soup):
+    """Extrai tabelas HTML usando puro BeautifulSoup, eliminando erros do lxml."""
+    dfs = []
+    if not soup:
+        return dfs
+    for table in soup.find_all("table"):
+        rows = []
+        for tr in table.find_all("tr"):
+            cells = [td.get_text(strip=True) for td in tr.find_all(["th", "td"])]
+            if cells:
+                rows.append(cells)
+        if rows:
+            try:
+                if len(rows) > 1 and len(rows[0]) == len(rows[1]):
+                    df = pd.DataFrame(rows[1:], columns=rows[0])
+                else:
+                    df = pd.DataFrame(rows)
+                dfs.append(df)
+            except Exception:
+                pass
+    return dfs
 
 def limpar_colunas_df(df):
     if isinstance(df.columns, pd.MultiIndex):
@@ -341,10 +363,8 @@ def obter_posicoes_santa_maria():
     pos_geral = "N/I"
     pos_grupo = "N/I"
     
-    try:
-        dfs = pd.read_html(URL_CLASSIFICACAO)
-    except Exception:
-        dfs = []
+    soup = carregar_dados_url(URL_CLASSIFICACAO)
+    dfs = extrair_tabelas_soup(soup) if soup else []
         
     if dfs:
         df_geral = limpar_colunas_df(dfs[0])
@@ -607,12 +627,7 @@ elif opcao == "Classificação Sub-13":
     soup_teste = carregar_dados_url(URL_CLASSIFICACAO)
     
     if soup_teste:
-        try:
-            dfs = pd.read_html(URL_CLASSIFICACAO)
-        except Exception as e:
-            dfs = []
-            st.warning(f"Aviso técnico ao processar tabelas HTML: {e}")
-
+        dfs = extrair_tabelas_soup(soup_teste)
         tab_geral, tab_grupos = st.tabs(["🌐 Classificação Geral", "🏆 Classificação por Grupos"])
         
         if dfs:
@@ -649,7 +664,7 @@ elif opcao == "Classificação Sub-13":
                 else:
                     st.warning("Tabelas de grupos não encontradas no momento.")
         else:
-            st.warning("A página foi descarregada, mas o pandas não encontrou nenhuma tabela HTML estruturada na página da classificação.")
+            st.warning("A página foi descarregada, mas nenhuma tabela HTML estruturada foi encontrada na página da classificação.")
     else:
         st.error("Não foi possível aceder ao link da classificação devido a um bloqueio ou falha de rede no servidor de origem.")
 
@@ -698,9 +713,9 @@ elif opcao == "Artilharia":
     st.subheader("🎯 Artilharia — Sub-13 Masculino")
     soup = carregar_dados_url(URL_ARTILHARIA)
     if soup:
-        tabelas = soup.find_all("table")
-        if tabelas:
-            df_art_raw = pd.read_html(io.StringIO(str(tabelas[0])))[0]
+        dfs_art = extrair_tabelas_soup(soup)
+        if dfs_art:
+            df_art_raw = dfs_art[0]
             
             novas_linhas = []
             
@@ -749,9 +764,8 @@ elif opcao == "Cartões Amarelos e Vermelhos":
     vermelhos_list = []
     
     if soup:
-        tabelas = soup.find_all("table")
-        for tab in tabelas:
-            df = pd.read_html(io.StringIO(str(tab)))[0]
+        dfs_cartoes = extrair_tabelas_soup(soup)
+        for df in dfs_cartoes:
             cols = [str(c).lower() for c in df.columns]
             
             if any("amarel" in c for c in cols):
@@ -806,15 +820,7 @@ elif opcao == "Suspensão":
     soup = carregar_dados_url(URL_SUSPENSOES)
     
     if soup:
-        tabelas = soup.find_all("table")
-        dfs_susp = []
-        for tab in tabelas:
-            try:
-                df = pd.read_html(io.StringIO(str(tab)))[0]
-                if not df.empty:
-                    dfs_susp.append(df)
-            except Exception:
-                continue
+        dfs_susp = extrair_tabelas_soup(soup)
         
         if dfs_susp:
             df_bruto = pd.concat(dfs_susp, ignore_index=True)
