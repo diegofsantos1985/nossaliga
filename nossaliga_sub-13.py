@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # -----------------------------------------------------------------------------
-# CONFIGURAÇÃO DA INTERFACE E DESIGN (OTIMIZADO PARA MOBILE)
+# CONFIGURAÇÃO DA INTERFACE E DESIGN
 # -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="Nossa Liga Futsal 2026 - Sub-13 Masculino",
@@ -23,60 +23,55 @@ st.markdown(
     """
     <style>
     .stApp { background-color: #f8f9fa; }
-    
     .header-box {
         background: linear-gradient(135deg, #160e91, #215ea0);
-        padding: 20px;
+        padding: 24px;
         border-radius: 12px;
         color: white;
-        margin-bottom: 18px;
+        margin-bottom: 22px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.15);
     }
-    .header-title { font-size: 24px; font-weight: 800; margin: 0; color: #ffffff; }
-    .header-subtitle { font-size: 12px; color: #f8f063; margin-top: 4px; font-weight: 600; }
-    
+    .header-title { font-size: 28px; font-weight: 800; margin: 0; color: #ffffff; }
+    .header-subtitle { font-size: 14px; color: #f8f063; margin-top: 4px; font-weight: 600; }
     .metric-card {
         background: white;
-        padding: 14px;
+        padding: 16px;
         border-radius: 10px;
         border-left: 5px solid #215ea0;
         box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         text-align: center;
-        margin-bottom: 10px;
     }
-    .metric-value { font-size: 20px; font-weight: bold; color: #160e91; }
-    .metric-label { font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600; }
-    
+    .metric-value { font-size: 24px; font-weight: bold; color: #160e91; }
+    .metric-label { font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 600; }
     .card-jogo {
         background: white;
-        padding: 15px;
+        padding: 18px;
         border-radius: 10px;
         border-left: 6px solid #160e91;
-        margin-bottom: 12px;
+        margin-bottom: 14px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     }
     .placar-badge {
         background-color: #160e91;
         color: white;
-        padding: 4px 10px;
+        padding: 4px 12px;
         border-radius: 6px;
         font-weight: bold;
-        font-size: 14px;
+        font-size: 16px;
         display: inline-block;
-        margin: 0 6px;
+        margin: 0 8px;
     }
     .placar-badge-final {
         background-color: #28a745;
         color: white;
-        padding: 4px 10px;
+        padding: 4px 12px;
         border-radius: 6px;
         font-weight: bold;
-        font-size: 14px;
+        font-size: 16px;
         display: inline-block;
-        margin: 0 6px;
+        margin: 0 8px;
     }
-    
-    /* Botões de navegação estilizados */
+    /* Estilização reduzida dos botões de navegação (Fundo Azul e Texto Branco Negrito) */
     .stButton > button {
         background-color: #160e91 !important;
         border: none !important;
@@ -90,33 +85,12 @@ st.markdown(
         width: 100% !important;
         text-align: center !important;
         transition: all 0.2s ease-in-out;
-        margin-bottom: 6px;
     }
     .stButton > button:hover {
         box-shadow: 0 4px 10px rgba(0,0,0,0.15) !important;
         border-left-color: #ffffff !important;
         background-color: #215ea0 !important;
         color: white !important;
-    }
-
-    /* Otimizações responsivas para telas de celular */
-    @media (max-width: 768px) {
-        .header-title { font-size: 20px; }
-        .header-subtitle { font-size: 11px; }
-        .header-box { padding: 15px; }
-        
-        /* Força a barra lateral a se comportar melhor em mobile */
-        [data-testid="stSidebar"] {
-            min-width: 260px !important;
-            max-width: 80vw !important;
-        }
-        
-        /* Ajuste nas colunas de abas para empilharem ou ficarem em grid no celular */
-        div[data-testid="column"] {
-            width: 100% !important;
-            flex: 1 1 100% !important;
-            min-width: 100% !important;
-        }
     }
     </style>
 """,
@@ -4578,7 +4552,7 @@ st.markdown(
 )
 
 # -----------------------------------------------------------------------------
-# MÉTRICAS FIXAS DO COLÉGIO SANTA MARIA
+# MÉTRICAS FIXAS DO COLÉGIO SANTA MARIA (INDEPENDENTES DOS FILTROS DA BARRA LATERAL)
 # -----------------------------------------------------------------------------
 equipe_alvo_cards = "Colégio Santa Maria"
 df_j_cards = (
@@ -4596,37 +4570,37 @@ col1, col2, col3, col4 = st.columns(4)
 with col1:
     st.markdown(
         f'<div class="metric-card"><div class="metric-value"'
-        ' style="font-size:14px; overflow:hidden; text-overflow:ellipsis;'
+        ' style="font-size:15px; overflow:hidden; text-overflow:ellipsis;'
         f' white-space:nowrap;">{equipe_alvo_cards}</div><div'
-        ' class="metric-label">Equipe</div></div>',
+        ' class="metric-label">Nome da Equipe</div></div>',
         unsafe_allow_html=True,
     )
 with col2:
     st.markdown(
         f'<div class="metric-card"><div'
         f' class="metric-value">{qtd_realizados_csm}</div><div'
-        ' class="metric-label">Realizados</div></div>',
+        ' class="metric-label">Jogos Realizados</div></div>',
         unsafe_allow_html=True,
     )
 with col3:
     st.markdown(
         f'<div class="metric-card"><div'
         f' class="metric-value">{qtd_restantes_csm}</div><div'
-        ' class="metric-label">Restantes</div></div>',
+        ' class="metric-label">Jogos Restantes</div></div>',
         unsafe_allow_html=True,
     )
 with col4:
     st.markdown(
         '<div class="metric-card"><div class="metric-value"'
-        ' style="font-size:14px;">Sub-13 M</div><div'
-        ' class="metric-label">Categoria</div></div>',
+        ' style="font-size:18px;">Sub-13 Masculino</div><div'
+        ' class="metric-label">Categoria Sub-13 Masculino</div></div>',
         unsafe_allow_html=True,
     )
 
 st.write("")
 
 # -----------------------------------------------------------------------------
-# BOTÕES DE NAVEGAÇÃO ESTILIZADOS
+# BOTÕES DE NAVEGAÇÃO ESTILIZADOS COMO CARTÕES (AZUL COM TEXTO BRANCO EM NEGRITO)
 # -----------------------------------------------------------------------------
 if "aba_ativa" not in st.session_state:
     st.session_state["aba_ativa"] = "Início"
@@ -4640,7 +4614,7 @@ abas = [
     "Cartões Amarelos e Vermelhos",
 ]
 
-cols_abas = st.columns(len(abas))
+cols_abas = st.columns(6)
 
 for i, aba in enumerate(abas):
     with cols_abas[i]:
@@ -4654,7 +4628,7 @@ st.write("")
 # -----------------------------------------------------------------------------
 aba_atual = st.session_state["aba_ativa"]
 
-# 0. PÁGINA INICIAL (INÍCIO)
+# 0. PÁGINA INICIAL (INÍCIO) - FIXA PARA COLÉGIO SANTA MARIA (SEM FILTRO LATERAL)
 if aba_atual == "Início":
     equipe_alvo = "Colégio Santa Maria"
 
@@ -4738,32 +4712,32 @@ if aba_atual == "Início":
 
         st.markdown(
             f"""
-        <div style="background: white; padding: 18px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); margin-bottom: 15px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 12px;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="text-align: center; background: #f8fafc; padding: 8px 14px; border-radius: 8px; border-left: 5px solid #b45309;">
-                        <div style="font-size: 9px; font-weight: bold; color: #64748b;">{d_sem}</div>
-                        <div style="font-size: 24px; font-weight: 900; color: #160e91; line-height: 1;">{d_dia:02d}</div>
-                        <div style="font-size: 11px; font-weight: bold; color: #b45309;">{d_mes}</div>
+        <div style="background: white; padding: 22px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); margin-bottom: 15px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="text-align: center; background: #f8fafc; padding: 10px 16px; border-radius: 8px; border-left: 5px solid #b45309;">
+                        <div style="font-size: 10px; font-weight: bold; color: #64748b;">{d_sem}</div>
+                        <div style="font-size: 30px; font-weight: 900; color: #160e91; line-height: 1;">{d_dia:02d}</div>
+                        <div style="font-size: 12px; font-weight: bold; color: #b45309;">{d_mes}</div>
                     </div>
                     <div>
-                        <div style="font-size: 14px; font-weight: bold; color: #1e293b;">🕒 {hora_jogo} &nbsp; <span style="color: #64748b; font-weight: normal; font-size: 12px;">(Chegada: {hora_chegada})</span></div>
-                        <div style="margin-top: 4px; font-size: 12px; color: #475569;">
-                            <span style="background: #160e91; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 10px;">{local_casa_fora}</span> 
+                        <div style="font-size: 16px; font-weight: bold; color: #1e293b;">🕒 {hora_jogo} &nbsp;&nbsp; <span style="color: #64748b; font-weight: normal; font-size: 13px;">Chegada: {hora_chegada}</span></div>
+                        <div style="margin-top: 6px; font-size: 13px; color: #475569;">
+                            <span style="background: #160e91; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">{local_casa_fora}</span> 
                             &nbsp;📍 {prox_jogo['Local']} &nbsp;|&nbsp; Jogo #{prox_jogo['Jogo']}
                         </div>
                     </div>
                 </div>
             </div>
-            <div style="display: flex; justify-content: space-around; align-items: center; padding: 5px 0;">
+            <div style="display: flex; justify-content: space-around; align-items: center; padding: 10px 0;">
                 <div style="text-align: center; flex: 1;">
-                    <div style="font-size: 14px; font-weight: 800; color: #160e91;">{prox_jogo['Mandante']}</div>
-                    <div style="font-size: 10px; color: #64748b; font-weight: bold; margin-top: 2px;">MANDANTE</div>
+                    <div style="font-size: 16px; font-weight: 800; color: #160e91;">{prox_jogo['Mandante']}</div>
+                    <div style="font-size: 11px; color: #64748b; font-weight: bold; margin-top: 2px;">MANDANTE</div>
                 </div>
-                <div style="font-size: 16px; font-weight: bold; color: #cbd5e1; padding: 0 10px;">✖</div>
+                <div style="font-size: 20px; font-weight: bold; color: #cbd5e1; padding: 0 20px;">✖</div>
                 <div style="text-align: center; flex: 1;">
-                    <div style="font-size: 14px; font-weight: 800; color: #160e91;">{prox_jogo['Visitante']}</div>
-                    <div style="font-size: 10px; color: #64748b; font-weight: bold; margin-top: 2px;">VISITANTE</div>
+                    <div style="font-size: 16px; font-weight: 800; color: #160e91;">{prox_jogo['Visitante']}</div>
+                    <div style="font-size: 11px; color: #64748b; font-weight: bold; margin-top: 2px;">VISITANTE</div>
                 </div>
             </div>
         </div>
@@ -4776,7 +4750,7 @@ if aba_atual == "Início":
     # SEÇÃO ÚLTIMO JOGO
     st.markdown(
         f"<div style='font-size: 13px; font-weight: 800; color: #64748b;"
-        f" text-transform: uppercase; margin: 20px 0 8px 0;'>ÚLTIMO RESULTADO"
+        f" text-transform: uppercase; margin: 25px 0 8px 0;'>ÚLTIMO RESULTADO"
         f" · {equipe_alvo.upper()}</div>",
         unsafe_allow_html=True,
     )
@@ -4808,34 +4782,34 @@ if aba_atual == "Início":
 
         st.markdown(
             f"""
-        <div style="background: white; padding: 18px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); margin-bottom: 20px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 12px;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="text-align: center; background: #f8fafc; padding: 8px 14px; border-radius: 8px; border-left: 5px solid #28a745;">
-                        <div style="font-size: 9px; font-weight: bold; color: #64748b;">{d_sem_u}</div>
-                        <div style="font-size: 24px; font-weight: 900; color: #160e91; line-height: 1;">{d_dia_u:02d}</div>
-                        <div style="font-size: 11px; font-weight: bold; color: #b45309;">{d_mes_u}</div>
+        <div style="background: white; padding: 22px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="text-align: center; background: #f8fafc; padding: 10px 16px; border-radius: 8px; border-left: 5px solid #28a745;">
+                        <div style="font-size: 10px; font-weight: bold; color: #64748b;">{d_sem_u}</div>
+                        <div style="font-size: 30px; font-weight: 900; color: #160e91; line-height: 1;">{d_dia_u:02d}</div>
+                        <div style="font-size: 12px; font-weight: bold; color: #b45309;">{d_mes_u}</div>
                     </div>
                     <div>
-                        <div style="margin-bottom: 4px;">{badge_res}</div>
-                        <div style="font-size: 12px; color: #475569;">
-                            <span style="background: #160e91; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 10px;">{local_casa_fora_u}</span> 
+                        <div style="margin-bottom: 6px;">{badge_res}</div>
+                        <div style="font-size: 13px; color: #475569;">
+                            <span style="background: #160e91; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">{local_casa_fora_u}</span> 
                             &nbsp;📍 {ult_jogo['Local']} &nbsp;|&nbsp; Jogo #{ult_jogo['Jogo']}
                         </div>
                     </div>
                 </div>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 5px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 10px;">
                 <div style="text-align: left; flex: 1;">
-                    <div style="font-size: 13px; font-weight: 800; color: #160e91;">{ult_jogo['Mandante']}</div>
-                    <div style="font-size: 9px; color: #64748b; font-weight: bold; margin-top: 2px;">MANDANTE</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #160e91;">{ult_jogo['Mandante']}</div>
+                    <div style="font-size: 10px; color: #64748b; font-weight: bold; margin-top: 2px;">MANDANTE</div>
                 </div>
-                <div style="font-size: 22px; font-weight: 900; color: #160e91; background: #f1f5f9; padding: 6px 16px; border-radius: 8px; letter-spacing: 2px;">
+                <div style="font-size: 28px; font-weight: 900; color: #160e91; background: #f1f5f9; padding: 8px 24px; border-radius: 8px; letter-spacing: 2px;">
                     {placar_u}
                 </div>
                 <div style="text-align: right; flex: 1;">
-                    <div style="font-size: 13px; font-weight: 800; color: #160e91;">{ult_jogo['Visitante']}</div>
-                    <div style="font-size: 9px; color: #64748b; font-weight: bold; margin-top: 2px;">VISITANTE</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #160e91;">{ult_jogo['Visitante']}</div>
+                    <div style="font-size: 10px; color: #64748b; font-weight: bold; margin-top: 2px;">VISITANTE</div>
                 </div>
             </div>
         </div>
@@ -4847,7 +4821,7 @@ if aba_atual == "Início":
 
 # 1. TABELA DE CLASSIFICAÇÃO
 elif aba_atual == "Classificação":
-    st.subheader(f"Classificação - {fase_selecionada}")
+    st.subheader(f"Tabela de Classificação - {fase_selecionada}")
 
     def aplicar_filtro_equipe(df):
         if equipe_selecionada != "Todas as Equipes" and "Equipe" in df.columns:
@@ -4857,7 +4831,7 @@ elif aba_atual == "Classificação":
     if fase_selecionada == "Classificação Geral":
         df_geral_view = aplicar_filtro_equipe(df_geral_oficial)
         st.markdown(
-            "### 🌐 **Classificação Geral Oficial (1º ao 28º)**"
+            "### 🌐 **Classificação Geral Oficial (Do 1º ao 28º Colocado)**"
         )
         st.dataframe(df_geral_view, use_container_width=True, hide_index=True)
 
@@ -4877,7 +4851,7 @@ elif aba_atual == "Classificação":
                 hide_index=True,
             )
         else:
-            col_g1, col_g2 = st.columns(1) # Empilhado no mobile para melhor leitura
+            col_g1, col_g2 = st.columns(2)
             with col_g1:
                 st.markdown("### 🅰️ **Grupo A**")
                 st.dataframe(
@@ -4885,6 +4859,7 @@ elif aba_atual == "Classificação":
                     use_container_width=True,
                     hide_index=True,
                 )
+            with col_g2:
                 st.markdown("### 🅱️ **Grupo B**")
                 st.dataframe(
                     aplicar_filtro_equipe(df_grupo_b),
@@ -4909,10 +4884,10 @@ elif aba_atual == "Próximos Jogos":
                 st.markdown(
                     f"""
                     <div class="card-jogo">
-                        <div style="font-size:12px; color:#64748b; margin-bottom: 6px;">
-                            <b>{num_jogo}</b>📅 {j['Data']} &nbsp;|&nbsp; ⏰ {j['Horário']} &nbsp;|&nbsp; 📍 {j['Local']}
+                        <div style="font-size:13px; color:#64748b; margin-bottom: 8px;">
+                            <b>{num_jogo}</b>📅 <b>Data:</b> {j['Data']} &nbsp;|&nbsp; ⏰ <b>Horário:</b> {j['Horário']} &nbsp;|&nbsp; 📍 <b>Local:</b> {j['Local']}
                         </div>
-                        <div style="font-size:15px; font-weight: 700; color: #160e91;">
+                        <div style="font-size:17px; font-weight: 700; color: #160e91;">
                             {j['Mandante']} <span class="placar-badge">VS</span> {j['Visitante']}
                         </div>
                     </div>
@@ -4941,10 +4916,10 @@ elif aba_atual == "Jogos Anteriores":
                 st.markdown(
                     f"""
                     <div class="card-jogo" style="border-left-color: #28a745;">
-                        <div style="font-size:12px; color:#64748b; margin-bottom: 6px;">
-                            <b>{num_jogo}</b>📅 {j['Data']} &nbsp;|&nbsp; ⏰ {j['Horário']} &nbsp;|&nbsp; 📍 {j['Local']}
+                        <div style="font-size:13px; color:#64748b; margin-bottom: 8px;">
+                            <b>{num_jogo}</b>📅 <b>Data:</b> {j['Data']} &nbsp;|&nbsp; ⏰ <b>Horário:</b> {j['Horário']} &nbsp;|&nbsp; 📍 <b>Local:</b> {j['Local']}
                         </div>
-                        <div style="font-size:16px; font-weight: 700; color: #160e91;">
+                        <div style="font-size:18px; font-weight: 700; color: #160e91;">
                             {j['Mandante']} <span class="placar-badge-final">{j['Placar']}</span> {j['Visitante']}
                         </div>
                     </div>
@@ -4964,7 +4939,7 @@ elif aba_atual == "Artilharia":
         df_art_view = df_art_view[df_art_view["Equipe"] == equipe_selecionada]
     st.dataframe(df_art_view, use_container_width=True, hide_index=True)
 
-# 5. CARTÕES AMARELOS E VERMELHOS
+# 5. CARTÕES AMARELOS E VERMELHOS (COM SUB-ABAS)
 elif aba_atual == "Cartões Amarelos e Vermelhos":
     st.subheader("Controle Disciplinar (Cartões)")
 
