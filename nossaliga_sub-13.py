@@ -199,7 +199,7 @@ st.markdown(
         padding-bottom: 2px;
     }
     
-    /* TABELAS EM AZUL NEGRITO */
+    /* TABELAS EM AZUL NEGRITO (COMPACTADAS) */
     .custom-table {
         width: 100%;
         border-collapse: collapse;
@@ -214,15 +214,16 @@ st.markdown(
         color: #ffffff;
         font-weight: 800;
         text-align: left;
-        padding: 10px 14px;
-        font-size: 13px;
+        padding: 6px 8px;
+        font-size: 11px;
     }
     .custom-table td {
-        padding: 8px 14px;
+        padding: 5px 8px;
         border-bottom: 1px solid #e2e8f0;
-        font-size: 13px;
+        font-size: 11px;
         color: #110888 !important;
         font-weight: 800 !important;
+        white-space: nowrap;
     }
     .custom-table tr:hover {
         background-color: #f8fafc;
@@ -230,13 +231,13 @@ st.markdown(
     .team-cell {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         font-weight: 800;
         color: #110888 !important;
     }
     .team-logo {
-        width: 22px;
-        height: 22px;
+        width: 18px;
+        height: 18px;
         object-fit: contain;
     }
     </style>
@@ -365,7 +366,6 @@ def obter_todas_tabelas_classificacao():
     df_grupo_b = pd.DataFrame()
     
     if soup_cat:
-        # Procurar blocos de texto/títulos específicos na página para capturar rigorosamente cada grupo
         for tag in soup_cat.find_all(["h2", "h3", "h4", "div", "span"], string=re.compile(r"geral|grupo\s*a|grupo\s*b", re.IGNORECASE)):
             texto_tag = tag.get_text(strip=True).lower()
             tabela = tag.find_next("table")
@@ -380,7 +380,6 @@ def obter_todas_tabelas_classificacao():
                     elif "grupo b" in texto_tag and df_grupo_b.empty:
                         df_grupo_b = df_limpo
 
-    # Fallback por índice sequencial na página principal caso algum não tenha sido mapeado por texto
     if df_geral.empty or df_grupo_a.empty or df_grupo_b.empty:
         dfs_cat = extrair_tabelas_soup(soup_cat) if soup_cat else []
         tabelas_validas = [limpar_colunas_df(d) for d in dfs_cat if filtrar_tabela_valida(limpar_colunas_df(d))]
@@ -390,13 +389,11 @@ def obter_todas_tabelas_classificacao():
         if df_grupo_a.empty and len(tabelas_validas) > 1:
             df_grupo_a = tabelas_validas[1]
         if df_grupo_b.empty and len(tabelas_validas) > 2:
-            # Garantir que não duplica a tabela do grupo A
             for t in tabelas_validas[2:]:
                 if not t.equals(df_grupo_a):
                     df_grupo_b = t
                     break
 
-    # Último recurso via links diretos se ainda faltar algum
     if df_grupo_a.empty or df_grupo_b.empty:
         links = obter_links_classificacao_dinamicos()
         if df_grupo_a.empty:
@@ -473,8 +470,8 @@ def formatar_tabela_classificacao_oficial(df, mapa_escudos):
             eq_fmt = formatar_equipe_com_escudo(nome_equipe, mapa_escudos)
 
             celula_classificacao = (
-                f'<div style="display: flex; align-items: center; gap: 12px;">'
-                f'<span style="font-weight: 800 !important; color: #110888 !important; min-width: 24px;">{pos_str}</span>'
+                f'<div style="display: flex; align-items: center; gap: 8px;">'
+                f'<span style="font-weight: 800 !important; color: #110888 !important; min-width: 20px;">{pos_str}</span>'
                 f'{eq_fmt}'
                 f'</div>'
             )
@@ -807,7 +804,7 @@ elif opcao == "Classificação Sub-13":
             st.warning("Não foi possível carregar a tabela de classificação geral.")
 
     with tab_grupos:
-        col_g1, col_g2 = st.columns(2)
+        col_g1, col_g2 = st.columns(2, gap="medium")
         with col_g1:
             st.markdown("### 🅰️ Grupo A")
             if not df_ga_raw.empty:
