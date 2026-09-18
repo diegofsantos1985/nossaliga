@@ -199,6 +199,7 @@ st.markdown(
         padding-bottom: 2px;
     }
     
+    /* TABELAS EM AZUL NEGRITO */
     .custom-table {
         width: 100%;
         border-collapse: collapse;
@@ -211,7 +212,7 @@ st.markdown(
     .custom-table th {
         background-color: #110888;
         color: #ffffff;
-        font-weight: 700;
+        font-weight: 800;
         text-align: left;
         padding: 10px 14px;
         font-size: 13px;
@@ -220,8 +221,8 @@ st.markdown(
         padding: 8px 14px;
         border-bottom: 1px solid #e2e8f0;
         font-size: 13px;
-        color: #110888;
-        font-weight: 700;
+        color: #110888 !important;
+        font-weight: 800 !important;
     }
     .custom-table tr:hover {
         background-color: #f8fafc;
@@ -230,8 +231,8 @@ st.markdown(
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        font-weight: 700;
-        color: #110888;
+        font-weight: 800;
+        color: #110888 !important;
     }
     .team-logo {
         width: 22px;
@@ -341,6 +342,18 @@ def obter_links_classificacao_dinamicos():
                     links["grupo_b"] = full_url
     return links
 
+def filtrar_tabela_grupo_valida(dfs):
+    for df in dfs:
+        if df.empty:
+            continue
+        df_limpo = limpar_colunas_df(df)
+        texto_tabela = df_limpo.to_string().lower()
+        if "vencedor do jogo" in texto_tabela or "semifinal" in texto_tabela or "final" in texto_tabela:
+            continue
+        if len(df_limpo.columns) >= 3 and len(df_limpo) > 1:
+            return df_limpo
+    return dfs[0] if dfs else pd.DataFrame()
+
 @st.cache_data(ttl=300)
 def obter_todas_tabelas_classificacao():
     links = obter_links_classificacao_dinamicos()
@@ -357,28 +370,31 @@ def obter_todas_tabelas_classificacao():
     
     df_geral = dfs_geral[0] if dfs_geral else (dfs_cat[0] if dfs_cat else pd.DataFrame())
     
-    df_grupo_a = pd.DataFrame()
-    df_grupo_b = pd.DataFrame()
+    df_grupo_a = filtrar_tabela_grupo_valida(dfs_ga)
+    df_grupo_b = filtrar_tabela_grupo_valida(dfs_gb)
     
-    if dfs_ga:
-        df_grupo_a = dfs_ga[0]
-    if dfs_gb:
-        df_grupo_b = dfs_gb[0]
-        
-    # Fallback se os grupos estiverem nas tabelas adicionais da página geral ou categoria
+    # Fallback caso os links específicos não retornem corretamente
     if df_grupo_a.empty and len(dfs_geral) > 1:
-        df_grupo_a = dfs_geral[1]
-    elif df_grupo_a.empty and len(dfs_cat) > 1:
-        df_grupo_a = dfs_cat[1]
-        
+        for d in dfs_geral[1:]:
+            if "vencedor do jogo" not in d.to_string().lower():
+                df_grupo_a = d
+                break
     if df_grupo_b.empty and len(dfs_geral) > 2:
-        df_grupo_b = dfs_geral[2]
-    elif df_grupo_b.empty and len(dfs_cat) > 2:
-        df_grupo_b = dfs_cat[2]
-    elif df_grupo_b.empty and len(dfs_geral) > 1 and df_grupo_a.empty:
-        df_grupo_a = dfs_geral[1]
-        if len(dfs_geral) > 2:
-            df_grupo_b = dfs_geral[2]
+        for d in dfs_geral[2:]:
+            if "vencedor do jogo" not in d.to_string().lower() and not d.equals(df_grupo_a):
+                df_grupo_b = d
+                break
+                
+    if df_grupo_a.empty and len(dfs_cat) > 1:
+        for d in dfs_cat[1:]:
+            if "vencedor do jogo" not in d.to_string().lower():
+                df_grupo_a = d
+                break
+    if df_grupo_b.empty and len(dfs_cat) > 2:
+        for d in dfs_cat[2:]:
+            if "vencedor do jogo" not in d.to_string().lower() and not d.equals(df_grupo_a):
+                df_grupo_b = d
+                break
             
     return df_geral, df_grupo_a, df_grupo_b
 
@@ -412,8 +428,8 @@ def formatar_equipe_com_escudo(nome_equipe, mapa_escudos):
             break
 
     if url_escudo:
-        return f'<div class="team-cell"><img src="{url_escudo}" class="team-logo" /><span style="color: #110888; font-weight: 700;">{nome_clean}</span></div>'
-    return f'<span style="color: #110888; font-weight: 700;">{nome_clean}</span>'
+        return f'<div class="team-cell"><img src="{url_escudo}" class="team-logo" /><span style="color: #110888 !important; font-weight: 800 !important;">{nome_clean}</span></div>'
+    return f'<span style="color: #110888 !important; font-weight: 800 !important;">{nome_clean}</span>'
 
 def formatar_tabela_classificacao_oficial(df, mapa_escudos):
     if df.empty:
@@ -423,7 +439,7 @@ def formatar_tabela_classificacao_oficial(df, mapa_escudos):
     novas_linhas = []
     
     for idx, row in df.iterrows():
-        if len(row) >= 11:
+        if len(row) >= 2:
             pos = str(row.iloc[0]).strip()
             pos_clean = re.sub(r'[ºª°]', '', pos).strip()
             pos_str = f"{pos_clean}º" if pos_clean.isdigit() else pos
@@ -437,7 +453,7 @@ def formatar_tabela_classificacao_oficial(df, mapa_escudos):
 
             celula_classificacao = (
                 f'<div style="display: flex; align-items: center; gap: 12px;">'
-                f'<span style="font-weight: 800; color: #110888; min-width: 24px;">{pos_str}</span>'
+                f'<span style="font-weight: 800 !important; color: #110888 !important; min-width: 24px;">{pos_str}</span>'
                 f'{eq_fmt}'
                 f'</div>'
             )
@@ -449,17 +465,20 @@ def formatar_tabela_classificacao_oficial(df, mapa_escudos):
                 if val and val.lower() not in ["none", "nan"]:
                     valores_estatisticas.append(val)
 
-            nova_linha.extend(valores_estatisticas[:10])
+            nova_linha.extend(valores_estatisticas)
             novas_linhas.append(nova_linha)
 
     colunas_oficiais = ["Classificação", "P", "J", "V", "E", "D", "GP", "GC", "SG", "Avg", "%A"]
     if novas_linhas:
         linhas_ajustadas = []
+        max_cols = max(len(nl) for nl in novas_linhas) if novas_linhas else len(colunas_oficiais)
+        cols_final = colunas_oficiais[:max_cols] if max_cols <= len(colunas_oficiais) else colunas_oficiais + [f"Col_{i}" for i in range(len(colunas_oficiais), max_cols)]
+        
         for nl in novas_linhas:
-            while len(nl) < len(colunas_oficiais):
+            while len(nl) < len(cols_final):
                 nl.append("")
-            linhas_ajustadas.append(nl[:len(colunas_oficiais)])
-        return pd.DataFrame(linhas_ajustadas, columns=colunas_oficiais)
+            linhas_ajustadas.append(nl[:len(cols_final)])
+        return pd.DataFrame(linhas_ajustadas, columns=cols_final)
 
     return df
 
