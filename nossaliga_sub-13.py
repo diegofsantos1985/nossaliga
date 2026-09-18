@@ -272,7 +272,7 @@ def carregar_dados_url(url):
         return None
 
 def extrair_tabelas_soup(soup):
-    """Extrai tabelas HTML usando puro BeautifulSoup, eliminando erros do lxml."""
+    """Extrai tabelas HTML usando puro BeautifulSoup, promovendo a primeira linha a cabeçalho se necessário."""
     dfs = []
     if not soup:
         return dfs
@@ -284,16 +284,37 @@ def extrair_tabelas_soup(soup):
                 rows.append(cells)
         if rows:
             try:
-                if len(rows) > 1 and len(rows[0]) == len(rows[1]):
-                    df = pd.DataFrame(rows[1:], columns=rows[0])
+                primeira_linha_str = " ".join(rows[0]).lower()
+                tem_cabecalho = any(k in primeira_linha_str for k in ["classificação", "equipe", "clube", "j", "v", "e", "d", "gp", "gc", "p"])
+                
+                if tem_cabecalho and len(rows) > 1:
+                    header = rows[0]
+                    data = rows[1:]
+                    max_len = max(len(r) for r in data) if data else len(header)
+                    while len(header) < max_len:
+                        header.append(f"Col_{len(header)}")
+                    df = pd.DataFrame(data, columns=header[:max_len])
                 else:
-                    df = pd.DataFrame(rows)
+                    if len(rows) > 1 and len(rows[0]) == len(rows[1]):
+                        df = pd.DataFrame(rows[1:], columns=rows[0])
+                    else:
+                        df = pd.DataFrame(rows)
                 dfs.append(df)
             except Exception:
                 pass
     return dfs
 
 def limpar_colunas_df(df):
+    if df.empty:
+        return df
+    
+    # Se as colunas forem numéricas (0, 1, 2...), tenta promover a primeira linha se for cabeçalho
+    if all(str(c).isdigit() for c in df.columns) and len(df) > 0:
+        primeira_linha = [str(val).lower() for val in df.iloc[0].values]
+        if any(k in " ".join(primeira_linha) for k in ["classificação", "equipe", "clube", "j", "v", "e", "d", "gp", "gc", "p"]):
+            df.columns = df.iloc[0]
+            df = df.iloc[1:].reset_index(drop=True)
+
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = ['_'.join(str(c) for c in col if 'unnamed' not in str(c).lower()).strip() for col in df.columns]
     else:
@@ -715,7 +736,7 @@ elif opcao == "Artilharia":
     if soup:
         dfs_art = extrair_tabelas_soup(soup)
         if dfs_art:
-            df_art_raw = dfs_art[0]
+            df_art_raw = limpar_colunas_df(dfs_art[0])
             
             novas_linhas = []
             
@@ -766,16 +787,17 @@ elif opcao == "Cartões Amarelos e Vermelhos":
     if soup:
         dfs_cartoes = extrair_tabelas_soup(soup)
         for df in dfs_cartoes:
-            cols = [str(c).lower() for c in df.columns]
+            df_limpo = limpar_colunas_df(df)
+            cols = [str(c).lower() for c in df_limpo.columns]
             
             if any("amarel" in c for c in cols):
-                amarelos_list.append(df)
+                amarelos_list.append(df_limpo)
             elif any("vermelh" in c for c in cols):
-                vermelhos_list.append(df)
+                vermelhos_list.append(df_limpo)
             elif len(amarelos_list) == 0:
-                amarelos_list.append(df)
+                amarelos_list.append(df_limpo)
             elif len(vermelhos_list) == 0:
-                vermelhos_list.append(df)
+                vermelhos_list.append(df_limpo)
 
         df_amarelos = pd.concat(amarelos_list, ignore_index=True) if amarelos_list else pd.DataFrame()
         df_vermelhos = pd.concat(vermelhos_list, ignore_index=True) if vermelhos_list else pd.DataFrame()
@@ -823,7 +845,8 @@ elif opcao == "Suspensão":
         dfs_susp = extrair_tabelas_soup(soup)
         
         if dfs_susp:
-            df_bruto = pd.concat(dfs_susp, ignore_index=True)
+            dfs_susp_limpos = [limpar_colunas_df(d) for d in dfs_susp]
+            df_bruto = pd.concat(dfs_susp_limpos, ignore_index=True)
             
             cols_equipe = [c for c in df_bruto.columns if "equipe" in str(c).lower()]
             todas_eqs = []
