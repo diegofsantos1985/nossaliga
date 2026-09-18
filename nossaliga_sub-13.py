@@ -242,9 +242,9 @@ st.markdown(
 )
 
 # -----------------------------------------------------------------------------
-# ENDEREÇOS E HEADERS
+# ENDEREÇOS E HEADERS (URL de Classificação Geral Atualizada)
 # -----------------------------------------------------------------------------
-URL_CLASSIFICACAO = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/categoria/sub-13-masculino/19978"
+URL_CLASSIFICACAO = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/categoria/sub-13-masculino/19978/classificacao/geral/0"
 URL_ARTILHARIA = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/categoria/sub-13-masculino/19978/estatisticas/artilharia"
 URL_CARTOES = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/estatisticas/cartoes"
 URL_SUSPENSOES = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/categoria/sub-13-masculino/19978/estatisticas/suspensoes"
@@ -256,7 +256,7 @@ HEADERS = {
 }
 
 # -----------------------------------------------------------------------------
-# FUNÇÕES DE RASPAGEM E UTILITÁRIOS (ROBUSTA SEM DEPENDER DE LXML)
+# FUNÇÕES DE RASPAGEM E UTILITÁRIOS
 # -----------------------------------------------------------------------------
 @st.cache_data(ttl=60)
 def carregar_dados_url(url):
@@ -272,7 +272,6 @@ def carregar_dados_url(url):
         return None
 
 def extrair_tabelas_soup(soup):
-    """Extrai tabelas HTML usando puro BeautifulSoup, promovendo a primeira linha a cabeçalho se necessário."""
     dfs = []
     if not soup:
         return dfs
@@ -308,7 +307,6 @@ def limpar_colunas_df(df):
     if df.empty:
         return df
     
-    # Se as colunas forem numéricas (0, 1, 2...), tenta promover a primeira linha se for cabeçalho
     if all(str(c).isdigit() for c in df.columns) and len(df) > 0:
         primeira_linha = [str(val).lower() for val in df.iloc[0].values]
         if any(k in " ".join(primeira_linha) for k in ["classificação", "equipe", "clube", "j", "v", "e", "d", "gp", "gc", "p"]):
