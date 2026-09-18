@@ -244,7 +244,7 @@ st.markdown(
 # -----------------------------------------------------------------------------
 # ENDEREÇOS E HEADERS
 # -----------------------------------------------------------------------------
-URL_CLASSIFICACAO = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/categoria/sub-13-masculino/19978/classificacao/geral/0"
+URL_CATEGORIA = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/categoria/sub-13-masculino/19978"
 URL_ARTILHARIA = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/categoria/sub-13-masculino/19978/estatisticas/artilharia"
 URL_CARTOES = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/estatisticas/cartoes"
 URL_SUSPENSOES = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/categoria/sub-13-masculino/19978/estatisticas/suspensoes"
@@ -263,12 +263,10 @@ def carregar_dados_url(url):
     try:
         resp = requests.get(url, headers=HEADERS, verify=False, timeout=15)
         if resp.status_code != 200:
-            st.error(f"O servidor bloqueou o acesso ou retornou erro. Código HTTP: {resp.status_code} para o URL: {url}")
             return None
         soup = BeautifulSoup(resp.content, "html.parser")
         return soup
-    except Exception as e:
-        st.error(f"Erro de ligação ao servidor: {e}")
+    except Exception:
         return None
 
 def extrair_tabelas_soup(soup):
@@ -320,8 +318,38 @@ def limpar_colunas_df(df):
     return df
 
 @st.cache_data(ttl=300)
+def obter_links_classificacao_dinamicos():
+    soup = carregar_dados_url(URL_CATEGORIA)
+    links = {
+        "geral": f"{URL_CATEGORIA}/classificacao/geral/0",
+        "grupo_a": "",
+        "grupo_b": ""
+    }
+    if soup:
+        for a in soup.find_all("a", href=True):
+            href = a['href']
+            texto = a.get_text(strip=True).lower()
+            if "classificacao" in href or "classificação" in href:
+                full_url = href if href.startswith("http") else f"https://www.nossaliga.com.br{href}"
+                if "geral" in href:
+                    links["geral"] = full_url
+                elif "grupo-a" in href or "grupo a" in texto or "grupo_a" in href:
+                    links["grupo_a"] = full_url
+                elif "grupo-b" in href or "grupo b" in texto or "grupo_b" in href:
+                    links["grupo_b"] = full_url
+                    
+    # Fallback URLs if not explicitly found via scraping links
+    if not links["grupo_a"]:
+        links["grupo_a"] = f"{URL_CATEGORIA}/classificacao/grupo-a/0"
+    if not links["grupo_b"]:
+        links["grupo_b"] = f"{URL_CATEGORIA}/classificacao/grupo-b/0"
+        
+    return links
+
+@st.cache_data(ttl=300)
 def obter_mapeamento_escudos():
-    soup = carregar_dados_url(URL_CLASSIFICACAO)
+    links = obter_links_classificacao_dinamicos()
+    soup = carregar_dados_url(links["geral"])
     mapa = {}
     if soup:
         imgs = soup.find_all("img")
@@ -430,11 +458,12 @@ def obter_posicoes_santa_maria():
     pos_geral = "N/I"
     pos_grupo = "N/I"
     
-    soup = carregar_dados_url(URL_CLASSIFICACAO)
-    dfs = extrair_tabelas_soup(soup) if soup else []
+    links = obter_links_classificacao_dinamicos()
+    soup_geral = carregar_dados_url(links["geral"])
+    dfs_geral = extrair_tabelas_soup(soup_geral) if soup_geral else []
         
-    if dfs:
-        df_geral = limpar_colunas_df(dfs[0])
+    if dfs_geral:
+        df_geral = limpar_colunas_df(dfs_geral[0])
         col_eq = [c for c in df_geral.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
         target_col = col_eq[0] if col_eq else df_geral.columns[1] if len(df_geral.columns) > 1 else df_geral.columns[0]
         
@@ -445,20 +474,33 @@ def obter_posicoes_santa_maria():
                 pos_geral = f"{val_pos}º" if val_pos.isdigit() else f"{row[col_pos]}º"
                 break
 
-        if len(dfs) >= 2:
-            df_g2 = limpar_colunas_df(dfs[1])
-            col_eq2 = [c for c in df_g2.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
-            target_col2 = col_eq2[0] if col_eq2 else df_g2.columns[1] if len(df_g2.columns) > 1 else df_g2.columns[0]
-            
-            for idx, row in df_g2.iterrows():
-                if "santa maria" in str(row[target_col2]).lower():
-                    col_pos = df_g2.columns[0]
+    soup_ga = carregar_dados_url(links["grupo_a"])
+    dfs_ga = extrair_tabelas_soup(soup_ga) if soup_ga else []
+    if dfs_ga:
+        df_ga = limpar_colunas_df(dfs_ga[0])
+        col_eq_ga = [c for c in df_ga.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
+        t_col = col_eq_ga[0] if col_eq_ga else df_ga.columns[1] if len(df_ga.columns) > 1 else df_ga.columns[0]
+        for idx, row in df_ga.iterrows():
+            if "santa maria" in str(row[t_col]).lower():
+                col_pos = df_ga.columns[0]
+                val_pos = re.sub(r'[ºª°]', '', str(row[col_pos])).strip()
+                pos_grupo = f"{val_pos}º" if val_pos.isdigit() else f"{row[col_pos]}º"
+                break
+                
+    if pos_grupo == "N/I":
+        soup_gb = carregar_dados_url(links["grupo_b"])
+        dfs_gb = extrair_tabelas_soup(soup_gb) if soup_gb else []
+        if dfs_gb:
+            df_gb = limpar_colunas_df(dfs_gb[0])
+            col_eq_gb = [c for c in df_gb.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
+            t_col_b = col_eq_gb[0] if col_eq_gb else df_gb.columns[1] if len(df_gb.columns) > 1 else df_gb.columns[0]
+            for idx, row in df_gb.iterrows():
+                if "santa maria" in str(row[t_col_b]).lower():
+                    col_pos = df_gb.columns[0]
                     val_pos = re.sub(r'[ºª°]', '', str(row[col_pos])).strip()
                     pos_grupo = f"{val_pos}º" if val_pos.isdigit() else f"{row[col_pos]}º"
                     break
-        else:
-            pos_grupo = pos_geral
-            
+
     return pos_geral, pos_grupo
 
 def ir_para_inicio():
@@ -488,6 +530,7 @@ def criar_filtro_equipe(lista_equipes, key):
     return selecionado
 
 mapa_escudos = obter_mapeamento_escudos()
+links_classificacao = obter_links_classificacao_dinamicos()
 
 # -----------------------------------------------------------------------------
 # INTERFACE PRINCIPAL
@@ -691,43 +734,38 @@ elif opcao == "Classificação Sub-13":
     botao_voltar_inicio("classificacao")
     st.subheader("📊 Classificação — Sub-13 Masculino")
     
-    soup_teste = carregar_dados_url(URL_CLASSIFICACAO)
+    tab_geral, tab_grupos = st.tabs(["🌐 Classificação Geral", "🏆 Classificação por Grupos"])
     
-    if soup_teste:
-        dfs = extrair_tabelas_soup(soup_teste)
-        tab_geral, tab_grupos = st.tabs(["🌐 Classificação Geral", "🏆 Classificação por Grupos"])
-        
-        if dfs:
-            dfs_formatadas = []
-            for df in dfs:
-                df_fmt = formatar_tabela_classificacao_oficial(df, mapa_escudos)
-                dfs_formatadas.append(df_fmt)
-
-            with tab_geral:
-                if dfs_formatadas:
-                    df_geral = dfs_formatadas[0]
-                    renderizar_tabela_html(df_geral)
-                else:
-                    st.warning("Não foi possível processar a tabela de classificação geral.")
-
-            with tab_grupos:
-                if len(dfs_formatadas) >= 2:
-                    col_g1, col_g2 = st.columns(2)
-                    with col_g1:
-                        st.markdown("### 🅰️ Grupo A")
-                        renderizar_tabela_html(dfs_formatadas[0])
-                    with col_g2:
-                        st.markdown("### 🅱️ Grupo B")
-                        renderizar_tabela_html(dfs_formatadas[1])
-                elif len(dfs_formatadas) == 1:
-                    st.markdown("### 🅰️ Grupo A")
-                    renderizar_tabela_html(dfs_formatadas[0])
-                else:
-                    st.warning("Tabelas de grupos não encontradas no momento.")
+    with tab_geral:
+        soup_geral = carregar_dados_url(links_classificacao["geral"])
+        dfs_geral = extrair_tabelas_soup(soup_geral) if soup_geral else []
+        if dfs_geral:
+            df_g_fmt = formatar_tabela_classificacao_oficial(dfs_geral[0], mapa_escudos)
+            renderizar_tabela_html(df_g_fmt)
         else:
-            st.warning("A página foi descarregada, mas nenhuma tabela HTML estruturada foi encontrada na página da classificação.")
-    else:
-        st.error("Não foi possível aceder ao link da classificação devido a um bloqueio ou falha de rede no servidor de origem.")
+            st.warning("Não foi possível carregar a tabela de classificação geral.")
+
+    with tab_grupos:
+        col_g1, col_g2 = st.columns(2)
+        with col_g1:
+            st.markdown("### 🅰️ Grupo A")
+            soup_ga = carregar_dados_url(links_classificacao["grupo_a"])
+            dfs_ga = extrair_tabelas_soup(soup_ga) if soup_ga else []
+            if dfs_ga:
+                df_ga_fmt = formatar_tabela_classificacao_oficial(dfs_ga[0], mapa_escudos)
+                renderizar_tabela_html(df_ga_fmt)
+            else:
+                st.info("Dados do Grupo A indisponíveis no momento.")
+                
+        with col_g2:
+            st.markdown("### 🅱️ Grupo B")
+            soup_gb = carregar_dados_url(links_classificacao["grupo_b"])
+            dfs_gb = extrair_tabelas_soup(soup_gb) if soup_gb else []
+            if dfs_gb:
+                df_gb_fmt = formatar_tabela_classificacao_oficial(dfs_gb[0], mapa_escudos)
+                renderizar_tabela_html(df_gb_fmt)
+            else:
+                st.info("Dados do Grupo B indisponíveis no momento.")
 
 elif opcao == "Jogos":
     botao_voltar_inicio("jogos")
