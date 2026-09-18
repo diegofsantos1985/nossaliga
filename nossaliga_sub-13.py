@@ -246,7 +246,7 @@ st.markdown(
 # -----------------------------------------------------------------------------
 URL_CLASSIFICACAO = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/categoria/sub-13-masculino/19978"
 URL_ARTILHARIA = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/categoria/sub-13-masculino/19978/estatisticas/artilharia"
-URL_CARTOES = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/categoria/sub-13-masculino/19978/estatisticas/cartoes"
+URL_CARTOES = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/estatisticas/cartoes"
 URL_SUSPENSOES = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/categoria/sub-13-masculino/19978/estatisticas/suspensoes"
 URL_JOGOS = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/impressao/categoria/19978/0"
 
@@ -262,9 +262,13 @@ HEADERS = {
 def carregar_dados_url(url):
     try:
         resp = requests.get(url, headers=HEADERS, verify=False, timeout=15)
+        if resp.status_code != 200:
+            st.error(f"O servidor bloqueou o acesso ou retornou erro. Código HTTP: {resp.status_code} para o URL: {url}")
+            return None
         soup = BeautifulSoup(resp.content, "html.parser")
         return soup
-    except Exception:
+    except Exception as e:
+        st.error(f"Erro de ligação ao servidor: {e}")
         return None
 
 def limpar_colunas_df(df):
@@ -600,48 +604,54 @@ elif opcao == "Classificação Sub-13":
     botao_voltar_inicio("classificacao")
     st.subheader("📊 Classificação — Sub-13 Masculino")
     
-    try:
-        dfs = pd.read_html(URL_CLASSIFICACAO)
-    except Exception:
-        dfs = []
-
-    tab_geral, tab_grupos = st.tabs(["🌐 Classificação Geral", "🏆 Classificação por Grupos"])
+    soup_teste = carregar_dados_url(URL_CLASSIFICACAO)
     
-    if dfs:
-        dfs_formatadas = []
-        for df in dfs:
-            df_fmt = limpar_colunas_df(df)
-            col_equipe = [c for c in df_fmt.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
-            if col_equipe:
-                df_fmt[col_equipe[0]] = df_fmt[col_equipe[0]].apply(lambda e: formatar_equipe_com_escudo(e, mapa_escudos))
-            elif len(df_fmt.columns) >= 2:
-                col_target = df_fmt.columns[1]
-                df_fmt[col_target] = df_fmt[col_target].apply(lambda e: formatar_equipe_com_escudo(e, mapa_escudos))
-            dfs_formatadas.append(df_fmt)
+    if soup_teste:
+        try:
+            dfs = pd.read_html(URL_CLASSIFICACAO)
+        except Exception as e:
+            dfs = []
+            st.warning(f"Aviso técnico ao processar tabelas HTML: {e}")
 
-        with tab_geral:
-            if dfs_formatadas:
-                df_geral = pd.concat(dfs_formatadas, ignore_index=True)
-                renderizar_tabela_html(df_geral)
-            else:
-                st.warning("Não foi possível processar a tabela de classificação geral.")
+        tab_geral, tab_grupos = st.tabs(["🌐 Classificação Geral", "🏆 Classificação por Grupos"])
+        
+        if dfs:
+            dfs_formatadas = []
+            for df in dfs:
+                df_fmt = limpar_colunas_df(df)
+                col_equipe = [c for c in df_fmt.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
+                if col_equipe:
+                    df_fmt[col_equipe[0]] = df_fmt[col_equipe[0]].apply(lambda e: formatar_equipe_com_escudo(e, mapa_escudos))
+                elif len(df_fmt.columns) >= 2:
+                    col_target = df_fmt.columns[1]
+                    df_fmt[col_target] = df_fmt[col_target].apply(lambda e: formatar_equipe_com_escudo(e, mapa_escudos))
+                dfs_formatadas.append(df_fmt)
 
-        with tab_grupos:
-            if len(dfs_formatadas) >= 2:
-                col_g1, col_g2 = st.columns(2)
-                with col_g1:
+            with tab_geral:
+                if dfs_formatadas:
+                    df_geral = pd.concat(dfs_formatadas, ignore_index=True)
+                    renderizar_tabela_html(df_geral)
+                else:
+                    st.warning("Não foi possível processar a tabela de classificação geral.")
+
+            with tab_grupos:
+                if len(dfs_formatadas) >= 2:
+                    col_g1, col_g2 = st.columns(2)
+                    with col_g1:
+                        st.markdown("### 🅰️ Grupo A")
+                        renderizar_tabela_html(dfs_formatadas[0])
+                    with col_g2:
+                        st.markdown("### 🅱️ Grupo B")
+                        renderizar_tabela_html(dfs_formatadas[1])
+                elif len(dfs_formatadas) == 1:
                     st.markdown("### 🅰️ Grupo A")
                     renderizar_tabela_html(dfs_formatadas[0])
-                with col_g2:
-                    st.markdown("### 🅱️ Grupo B")
-                    renderizar_tabela_html(dfs_formatadas[1])
-            elif len(dfs_formatadas) == 1:
-                st.markdown("### 🅰️ Grupo A")
-                renderizar_tabela_html(dfs_formatadas[0])
-            else:
-                st.warning("Tabelas de grupos não encontradas no momento.")
+                else:
+                    st.warning("Tabelas de grupos não encontradas no momento.")
+        else:
+            st.warning("A página foi descarregada, mas o pandas não encontrou nenhuma tabela HTML estruturada na página da classificação.")
     else:
-        st.warning("Não foi possível processar a tabela de classificação geral.")
+        st.error("Não foi possível aceder ao link da classificação devido a um bloqueio ou falha de rede no servidor de origem.")
 
 elif opcao == "Jogos":
     botao_voltar_inicio("jogos")
