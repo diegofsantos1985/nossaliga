@@ -269,6 +269,27 @@ def carregar_dados_url(url):
     except Exception:
         return None
 
+def processar_tabela_html(tab):
+    try:
+        dfs = pd.read_html(io.StringIO(str(tab)))
+        if not dfs:
+            return None
+        df = dfs[0]
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = ['_'.join(str(c) for c in col if 'unnamed' not in str(c).lower()).strip() for col in df.columns]
+        else:
+            df.columns = [str(c).strip() for c in df.columns]
+            
+        cols_lower = [str(c).lower() for c in df.columns]
+        indicadores = ["p", "j", "pts", "pontos", "v", "e", "d", "sg", "gp", "gc", "classificação", "equipe", "clube"]
+        tem_indicador = any(any(ind in c for ind in indicadores) for c in cols_lower)
+        
+        if tem_indicador or len(df.columns) >= 3:
+            return df
+    except Exception:
+        pass
+    return None
+
 @st.cache_data(ttl=300)
 def obter_mapeamento_escudos():
     soup = carregar_dados_url(URL_CLASSIFICACAO)
@@ -337,18 +358,15 @@ def obter_posicoes_santa_maria():
         tabelas = soup.find_all("table")
         dfs = []
         for tab in tabelas:
-            try:
-                df = pd.read_html(io.StringIO(str(tab)))[0]
-                if "P" in df.columns or "J" in df.columns or "Pts" in df.columns:
-                    dfs.append(df)
-            except Exception:
-                continue
+            df = processar_tabela_html(tab)
+            if df is not None:
+                dfs.append(df)
         
         # Posição na Classificação Geral
         if dfs:
             df_geral = pd.concat(dfs, ignore_index=True)
             col_eq = [c for c in df_geral.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
-            target_col = col_eq[0] if col_eq else df_geral.columns[1]
+            target_col = col_eq[0] if col_eq else df_geral.columns[1] if len(df_geral.columns) > 1 else df_geral.columns[0]
             
             for idx, row in df_geral.iterrows():
                 if "santa maria" in str(row[target_col]).lower():
@@ -363,7 +381,7 @@ def obter_posicoes_santa_maria():
         # Posição na Classificação por Grupo
         for df_g in dfs:
             col_eq = [c for c in df_g.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
-            target_col = col_eq[0] if col_eq else df_g.columns[1]
+            target_col = col_eq[0] if col_eq else df_g.columns[1] if len(df_g.columns) > 1 else df_g.columns[0]
             
             for idx, row in df_g.iterrows():
                 if "santa maria" in str(row[target_col]).lower():
@@ -502,11 +520,9 @@ if opcao == "Início":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # LAYOUT DE 2 COLUNAS AJUSTADO: ESQ (MAIOR) | DIR (MENOR/COMPACTO PARA OS RESULTADOS DA ÚLTIMA RODADA)
     col_esq, col_dir = st.columns([1.3, 1.0])
 
     with col_esq:
-        # 1. PRÓXIMO JOGO
         st.markdown("<div class='match-header'>PRÓXIMO JOGO - COLÉGIO SANTA MARIA</div>", unsafe_allow_html=True)
         if not df_sm_restantes.empty:
             prox = df_sm_restantes.iloc[0]
@@ -536,7 +552,6 @@ if opcao == "Início":
         else:
             st.info("Não há próximos jogos agendados no momento.")
 
-        # 2. ÚLTIMO RESULTADO DO COLÉGIO SANTA MARIA (LOGO ABAIXO)
         st.markdown("<div class='match-header' style='margin-top: 15px;'>ÚLTIMO RESULTADO - COLÉGIO SANTA MARIA</div>", unsafe_allow_html=True)
         if not df_sm_realizados.empty:
             ult_sm = df_sm_realizados.iloc[-1]
@@ -581,7 +596,6 @@ if opcao == "Início":
             st.info("Nenhum resultado anterior registrado até o momento.")
 
     with col_dir:
-        # 3. COLUNA DIREITA: RESULTADOS DA ÚLTIMA RODADA (COMPACTO E COM LARGURA REDUZIDA)
         st.markdown("<div class='match-header'>RESULTADOS DA ÚLTIMA RODADA</div>", unsafe_allow_html=True)
         if not df_todos_jogos.empty:
             is_realizado_geral = df_todos_jogos["Placar"].str.contains(r"\d", regex=True)
@@ -620,18 +634,15 @@ elif opcao == "Classificação Sub-13":
         tabelas = soup.find_all("table")
         dfs = []
         for tab in tabelas:
-            try:
-                df = pd.read_html(io.StringIO(str(tab)))[0]
-                if "P" in df.columns or "J" in df.columns or "Pts" in df.columns:
-                    col_equipe = [c for c in df.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
-                    if col_equipe:
-                        df[col_equipe[0]] = df[col_equipe[0]].apply(lambda e: formatar_equipe_com_escudo(e, mapa_escudos))
-                    elif len(df.columns) >= 2:
-                        col_target = df.columns[1]
-                        df[col_target] = df[col_target].apply(lambda e: formatar_equipe_com_escudo(e, mapa_escudos))
-                    dfs.append(df)
-            except Exception:
-                continue
+            df = processar_tabela_html(tab)
+            if df is not None:
+                col_equipe = [c for c in df.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
+                if col_equipe:
+                    df[col_equipe[0]] = df[col_equipe[0]].apply(lambda e: formatar_equipe_com_escudo(e, mapa_escudos))
+                elif len(df.columns) >= 2:
+                    col_target = df.columns[1]
+                    df[col_target] = df[col_target].apply(lambda e: formatar_equipe_com_escudo(e, mapa_escudos))
+                dfs.append(df)
 
         with tab_geral:
             if dfs:
@@ -842,7 +853,6 @@ elif opcao == "Suspensão":
                 "🛡️ Penalização de Equipes"
             ])
 
-            # --- 1. SUB-ABA: ATLETAS ---
             with tab_atletas:
                 st.markdown("### Penalização de Atletas")
                 if "Atleta" in df_bruto.columns:
@@ -861,7 +871,6 @@ elif opcao == "Suspensão":
                 else:
                     st.info("Nenhuma penalização de atleta encontrada.")
 
-            # --- 2. SUB-ABA: COMISSÃO TÉCNICA ---
             with tab_comissao:
                 st.markdown("### Penalização de Comissão Técnica")
                 
@@ -908,7 +917,6 @@ elif opcao == "Suspensão":
                 else:
                     st.info("Nenhuma penalização de comissão técnica encontrada.")
 
-            # --- 3. SUB-ABA: EQUIPES ---
             with tab_equipes:
                 st.markdown("### Penalização de Equipes")
                 df_eq = df_bruto.copy()
