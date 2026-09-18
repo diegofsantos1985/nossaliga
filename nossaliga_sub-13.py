@@ -342,60 +342,53 @@ def obter_links_classificacao_dinamicos():
                     links["grupo_b"] = full_url
     return links
 
-def filtrar_tabela_grupo_valida(dfs):
-    for df in dfs:
-        if df.empty:
-            continue
-        df_limpo = limpar_colunas_df(df)
-        texto_tabela = df_limpo.to_string().lower()
-        if "vencedor do jogo" in texto_tabela or "semifinal" in texto_tabela or "final" in texto_tabela:
-            continue
-        if len(df_limpo.columns) >= 3 and len(df_limpo) > 1:
-            return df_limpo
-    return dfs[0] if dfs else pd.DataFrame()
+def filtrar_tabela_valida(df):
+    if df.empty:
+        return True
+    texto = df.to_string().lower()
+    if "vencedor do jogo" in texto or "semifinal" in texto or "final" in texto:
+        return False
+    if len(df.columns) < 3 or len(df) <= 1:
+        return False
+    return True
 
 @st.cache_data(ttl=300)
 def obter_todas_tabelas_classificacao():
-    links = obter_links_classificacao_dinamicos()
-    
-    soup_geral = carregar_dados_url(links["geral"])
+    # Extrai diretamente da página principal da categoria, onde as tabelas de grupos aparecem sequencialmente
     soup_cat = carregar_dados_url(URL_CATEGORIA)
-    soup_ga = carregar_dados_url(links["grupo_a"])
-    soup_gb = carregar_dados_url(links["grupo_b"])
-    
-    dfs_geral = extrair_tabelas_soup(soup_geral) if soup_geral else []
     dfs_cat = extrair_tabelas_soup(soup_cat) if soup_cat else []
-    dfs_ga = extrair_tabelas_soup(soup_ga) if soup_ga else []
-    dfs_gb = extrair_tabelas_soup(soup_gb) if soup_gb else []
     
-    df_geral = dfs_geral[0] if dfs_geral else (dfs_cat[0] if dfs_cat else pd.DataFrame())
+    tabelas_validas = []
+    for d in dfs_cat:
+        d_limpo = limpar_colunas_df(d)
+        if filtrar_tabela_valida(d_limpo):
+            tabelas_validas.append(d_limpo)
+            
+    df_geral = tabelas_validas[0] if len(tabelas_validas) > 0 else pd.DataFrame()
+    df_grupo_a = tabelas_validas[1] if len(tabelas_validas) > 1 else pd.DataFrame()
+    df_grupo_b = tabelas_validas[2] if len(tabelas_validas) > 2 else pd.DataFrame()
     
-    df_grupo_a = filtrar_tabela_grupo_valida(dfs_ga)
-    df_grupo_b = filtrar_tabela_grupo_valida(dfs_gb)
-    
-    # Fallback caso os links específicos não retornem corretamente
-    if df_grupo_a.empty and len(dfs_geral) > 1:
-        for d in dfs_geral[1:]:
-            if "vencedor do jogo" not in d.to_string().lower():
-                df_grupo_a = d
-                break
-    if df_grupo_b.empty and len(dfs_geral) > 2:
-        for d in dfs_geral[2:]:
-            if "vencedor do jogo" not in d.to_string().lower() and not d.equals(df_grupo_a):
-                df_grupo_b = d
+    # Fallback caso encontre menos tabelas na principal
+    if df_grupo_a.empty or df_grupo_b.empty:
+        links = obter_links_classificacao_dinamicos()
+        soup_ga = carregar_dados_url(links["grupo_a"])
+        soup_gb = carregar_dados_url(links["grupo_b"])
+        
+        dfs_ga = extrair_tabelas_soup(soup_ga) if soup_ga else []
+        dfs_gb = extrair_tabelas_soup(soup_gb) if soup_gb else []
+        
+        for d in dfs_ga:
+            d_limpo = limpar_colunas_df(d)
+            if filtrar_tabela_valida(d_limpo):
+                df_grupo_a = d_limpo
                 break
                 
-    if df_grupo_a.empty and len(dfs_cat) > 1:
-        for d in dfs_cat[1:]:
-            if "vencedor do jogo" not in d.to_string().lower():
-                df_grupo_a = d
+        for d in dfs_gb:
+            d_limpo = limpar_colunas_df(d)
+            if filtrar_tabela_valida(d_limpo) and not d_limpo.equals(df_grupo_a):
+                df_grupo_b = d_limpo
                 break
-    if df_grupo_b.empty and len(dfs_cat) > 2:
-        for d in dfs_cat[2:]:
-            if "vencedor do jogo" not in d.to_string().lower() and not d.equals(df_grupo_a):
-                df_grupo_b = d
-                break
-            
+
     return df_geral, df_grupo_a, df_grupo_b
 
 @st.cache_data(ttl=300)
