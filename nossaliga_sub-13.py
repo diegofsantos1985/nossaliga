@@ -270,24 +270,36 @@ def carregar_dados_url(url):
         return None
 
 def processar_tabela_html(tab):
+    # Tenta ler com pandas read_html
     try:
         dfs = pd.read_html(io.StringIO(str(tab)))
-        if not dfs:
-            return None
-        df = dfs[0]
-        if isinstance(df.columns, pd.MultiIndex):
-            df.columns = ['_'.join(str(c) for c in col if 'unnamed' not in str(c).lower()).strip() for col in df.columns]
-        else:
-            df.columns = [str(c).strip() for c in df.columns]
-            
-        cols_lower = [str(c).lower() for c in df.columns]
-        indicadores = ["p", "j", "pts", "pontos", "v", "e", "d", "sg", "gp", "gc", "classificação", "equipe", "clube"]
-        tem_indicador = any(any(ind in c for ind in indicadores) for c in cols_lower)
-        
-        if tem_indicador or len(df.columns) >= 3:
+        if dfs:
+            df = dfs[0]
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = ['_'.join(str(c) for c in col if 'unnamed' not in str(c).lower()).strip() for col in df.columns]
+            else:
+                df.columns = [str(c).strip() for c in df.columns]
+            if not df.empty and len(df.columns) > 0:
+                return df
+    except Exception:
+        pass
+    
+    # Fallback robusto: Extração manual por BeautifulSoup caso o pandas falhe
+    try:
+        linhas = []
+        for tr in tab.find_all("tr"):
+            cols = [td.get_text(strip=True) for td in tr.find_all(["th", "td"])]
+            if cols:
+                linhas.append(cols)
+        if len(linhas) > 1:
+            df = pd.DataFrame(linhas[1:], columns=linhas[0])
+            return df
+        elif len(linhas) == 1:
+            df = pd.DataFrame(linhas)
             return df
     except Exception:
         pass
+        
     return None
 
 @st.cache_data(ttl=300)
