@@ -192,7 +192,6 @@ st.markdown(
         font-weight: 800 !important;
     }
 
-    /* ALINHAMENTO VERTICAL DO BOTÃO LIMPAR FILTRO */
     .btn-limpar-container {
         display: flex;
         align-items: flex-end;
@@ -200,7 +199,6 @@ st.markdown(
         padding-bottom: 2px;
     }
     
-    /* REGRAS DE TABELA HTML CUSTOMIZADA COM LOGO INLINE */
     .custom-table {
         width: 100%;
         border-collapse: collapse;
@@ -269,38 +267,12 @@ def carregar_dados_url(url):
     except Exception:
         return None
 
-def processar_tabela_html(tab):
-    # Tenta ler com pandas read_html
-    try:
-        dfs = pd.read_html(io.StringIO(str(tab)))
-        if dfs:
-            df = dfs[0]
-            if isinstance(df.columns, pd.MultiIndex):
-                df.columns = ['_'.join(str(c) for c in col if 'unnamed' not in str(c).lower()).strip() for col in df.columns]
-            else:
-                df.columns = [str(c).strip() for c in df.columns]
-            if not df.empty and len(df.columns) > 0:
-                return df
-    except Exception:
-        pass
-    
-    # Fallback robusto: Extração manual por BeautifulSoup caso o pandas falhe
-    try:
-        linhas = []
-        for tr in tab.find_all("tr"):
-            cols = [td.get_text(strip=True) for td in tr.find_all(["th", "td"])]
-            if cols:
-                linhas.append(cols)
-        if len(linhas) > 1:
-            df = pd.DataFrame(linhas[1:], columns=linhas[0])
-            return df
-        elif len(linhas) == 1:
-            df = pd.DataFrame(linhas)
-            return df
-    except Exception:
-        pass
-        
-    return None
+def limpar_colunas_df(df):
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = ['_'.join(str(c) for c in col if 'unnamed' not in str(c).lower()).strip() for col in df.columns]
+    else:
+        df.columns = [str(c).strip() for c in df.columns]
+    return df
 
 @st.cache_data(ttl=300)
 def obter_mapeamento_escudos():
@@ -362,51 +334,40 @@ def obter_df_jogos():
     return pd.DataFrame(jogos_dados)
 
 def obter_posicoes_santa_maria():
-    soup = carregar_dados_url(URL_CLASSIFICACAO)
     pos_geral = "N/I"
     pos_grupo = "N/I"
     
-    if soup:
-        tabelas = soup.find_all("table")
+    try:
+        dfs = pd.read_html(URL_CLASSIFICACAO)
+    except Exception:
         dfs = []
-        for tab in tabelas:
-            df = processar_tabela_html(tab)
-            if df is not None:
-                dfs.append(df)
         
-        # Posição na Classificação Geral
-        if dfs:
-            df_geral = pd.concat(dfs, ignore_index=True)
-            col_eq = [c for c in df_geral.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
-            target_col = col_eq[0] if col_eq else df_geral.columns[1] if len(df_geral.columns) > 1 else df_geral.columns[0]
-            
-            for idx, row in df_geral.iterrows():
-                if "santa maria" in str(row[target_col]).lower():
-                    col_pos = df_geral.columns[0]
-                    val_pos = re.sub(r'[ºª°]', '', str(row[col_pos])).strip()
-                    if val_pos.isdigit():
-                        pos_geral = f"{val_pos}º"
-                    else:
-                        pos_geral = f"{row[col_pos]}º"
-                    break
-
-        # Posição na Classificação por Grupo
-        for df_g in dfs:
-            col_eq = [c for c in df_g.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
-            target_col = col_eq[0] if col_eq else df_g.columns[1] if len(df_g.columns) > 1 else df_g.columns[0]
-            
-            for idx, row in df_g.iterrows():
-                if "santa maria" in str(row[target_col]).lower():
-                    col_pos = df_g.columns[0]
-                    val_pos = re.sub(r'[ºª°]', '', str(row[col_pos])).strip()
-                    if val_pos.isdigit():
-                        pos_grupo = f"{val_pos}º"
-                    else:
-                        pos_grupo = f"{row[col_pos]}º"
-                    break
-            if pos_grupo != "N/I":
+    if dfs:
+        df_geral = limpar_colunas_df(dfs[0])
+        col_eq = [c for c in df_geral.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
+        target_col = col_eq[0] if col_eq else df_geral.columns[1] if len(df_geral.columns) > 1 else df_geral.columns[0]
+        
+        for idx, row in df_geral.iterrows():
+            if "santa maria" in str(row[target_col]).lower():
+                col_pos = df_geral.columns[0]
+                val_pos = re.sub(r'[ºª°]', '', str(row[col_pos])).strip()
+                pos_geral = f"{val_pos}º" if val_pos.isdigit() else f"{row[col_pos]}º"
                 break
-                
+
+        if len(dfs) >= 2:
+            df_g2 = limpar_colunas_df(dfs[1])
+            col_eq2 = [c for c in df_g2.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
+            target_col2 = col_eq2[0] if col_eq2 else df_g2.columns[1] if len(df_g2.columns) > 1 else df_g2.columns[0]
+            
+            for idx, row in df_g2.iterrows():
+                if "santa maria" in str(row[target_col2]).lower():
+                    col_pos = df_g2.columns[0]
+                    val_pos = re.sub(r'[ºª°]', '', str(row[col_pos])).strip()
+                    pos_grupo = f"{val_pos}º" if val_pos.isdigit() else f"{row[col_pos]}º"
+                    break
+        else:
+            pos_grupo = pos_geral
+            
     return pos_geral, pos_grupo
 
 def ir_para_inicio():
@@ -638,47 +599,49 @@ if opcao == "Início":
 elif opcao == "Classificação Sub-13":
     botao_voltar_inicio("classificacao")
     st.subheader("📊 Classificação — Sub-13 Masculino")
-    soup = carregar_dados_url(URL_CLASSIFICACAO)
     
+    try:
+        dfs = pd.read_html(URL_CLASSIFICACAO)
+    except Exception:
+        dfs = []
+
     tab_geral, tab_grupos = st.tabs(["🌐 Classificação Geral", "🏆 Classificação por Grupos"])
     
-    if soup:
-        tabelas = soup.find_all("table")
-        dfs = []
-        for tab in tabelas:
-            df = processar_tabela_html(tab)
-            if df is not None:
-                col_equipe = [c for c in df.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
-                if col_equipe:
-                    df[col_equipe[0]] = df[col_equipe[0]].apply(lambda e: formatar_equipe_com_escudo(e, mapa_escudos))
-                elif len(df.columns) >= 2:
-                    col_target = df.columns[1]
-                    df[col_target] = df[col_target].apply(lambda e: formatar_equipe_com_escudo(e, mapa_escudos))
-                dfs.append(df)
+    if dfs:
+        dfs_formatadas = []
+        for df in dfs:
+            df_fmt = limpar_colunas_df(df)
+            col_equipe = [c for c in df_fmt.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
+            if col_equipe:
+                df_fmt[col_equipe[0]] = df_fmt[col_equipe[0]].apply(lambda e: formatar_equipe_com_escudo(e, mapa_escudos))
+            elif len(df_fmt.columns) >= 2:
+                col_target = df_fmt.columns[1]
+                df_fmt[col_target] = df_fmt[col_target].apply(lambda e: formatar_equipe_com_escudo(e, mapa_escudos))
+            dfs_formatadas.append(df_fmt)
 
         with tab_geral:
-            if dfs:
-                df_geral = pd.concat(dfs, ignore_index=True)
+            if dfs_formatadas:
+                df_geral = pd.concat(dfs_formatadas, ignore_index=True)
                 renderizar_tabela_html(df_geral)
             else:
                 st.warning("Não foi possível processar a tabela de classificação geral.")
 
         with tab_grupos:
-            if len(dfs) >= 2:
+            if len(dfs_formatadas) >= 2:
                 col_g1, col_g2 = st.columns(2)
                 with col_g1:
                     st.markdown("### 🅰️ Grupo A")
-                    renderizar_tabela_html(dfs[0])
+                    renderizar_tabela_html(dfs_formatadas[0])
                 with col_g2:
                     st.markdown("### 🅱️ Grupo B")
-                    renderizar_tabela_html(dfs[1])
-            elif len(dfs) == 1:
+                    renderizar_tabela_html(dfs_formatadas[1])
+            elif len(dfs_formatadas) == 1:
                 st.markdown("### 🅰️ Grupo A")
-                renderizar_tabela_html(dfs[0])
+                renderizar_tabela_html(dfs_formatadas[0])
             else:
                 st.warning("Tabelas de grupos não encontradas no momento.")
     else:
-        st.error("Erro na comunicação com o servidor da liga.")
+        st.warning("Não foi possível processar a tabela de classificação geral.")
 
 elif opcao == "Jogos":
     botao_voltar_inicio("jogos")
