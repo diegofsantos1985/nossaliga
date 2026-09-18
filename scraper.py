@@ -2,6 +2,10 @@ from datetime import datetime
 import json
 import requests
 from bs4 import BeautifulSoup
+import urllib3
+
+# Desativa os avisos de SSL para não poluir os registos
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # URL oficial da competição da Nossa Liga Futsal
 URL = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361"
@@ -16,7 +20,8 @@ def extrair_dados():
   }
 
   print(f"A aceder ao site: {URL}")
-  response = requests.get(URL, headers=headers)
+  # verify=False ignora o erro de certificado SSL do site de destino
+  response = requests.get(URL, headers=headers, verify=False)
 
   dados_liga = {
       "ultima_atualizacao": datetime.now().strftime("%d/%m/%Y %H:%M"),
