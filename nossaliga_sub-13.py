@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # -----------------------------------------------------------------------------
-# CONFIGURAÇÃO DE TELA
+# CONFIGURAÇÃO DE ECRÃ
 # -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="Nossa Liga Futsal 2026 - Sub-13 Masculino",
@@ -272,36 +272,41 @@ def carregar_dados_url(url):
     except Exception:
         return None
 
+def extrair_tabela_unica(table):
+    rows = []
+    for tr in table.find_all("tr"):
+        cells = [td.get_text(strip=True) for td in tr.find_all(["th", "td"])]
+        if cells:
+            rows.append(cells)
+    if not rows:
+        return pd.DataFrame()
+    try:
+        primeira_linha_str = " ".join(rows[0]).lower()
+        tem_cabecalho = any(k in primeira_linha_str for k in ["classificação", "equipe", "clube", "j", "v", "e", "d", "gp", "gc", "p"])
+        
+        if tem_cabecalho and len(rows) > 1:
+            header = rows[0]
+            data = rows[1:]
+            max_len = max(len(r) for r in data) if data else len(header)
+            while len(header) < max_len:
+                header.append(f"Col_{len(header)}")
+            return pd.DataFrame(data, columns=header[:max_len])
+        else:
+            if len(rows) > 1 and len(rows[0]) == len(rows[1]):
+                return pd.DataFrame(rows[1:], columns=rows[0])
+            else:
+                return pd.DataFrame(rows)
+    except Exception:
+        return pd.DataFrame()
+
 def extrair_tabelas_soup(soup):
     dfs = []
     if not soup:
         return dfs
     for table in soup.find_all("table"):
-        rows = []
-        for tr in table.find_all("tr"):
-            cells = [td.get_text(strip=True) for td in tr.find_all(["th", "td"])]
-            if cells:
-                rows.append(cells)
-        if rows:
-            try:
-                primeira_linha_str = " ".join(rows[0]).lower()
-                tem_cabecalho = any(k in primeira_linha_str for k in ["classificação", "equipe", "clube", "j", "v", "e", "d", "gp", "gc", "p"])
-                
-                if tem_cabecalho and len(rows) > 1:
-                    header = rows[0]
-                    data = rows[1:]
-                    max_len = max(len(r) for r in data) if data else len(header)
-                    while len(header) < max_len:
-                        header.append(f"Col_{len(header)}")
-                    df = pd.DataFrame(data, columns=header[:max_len])
-                else:
-                    if len(rows) > 1 and len(rows[0]) == len(rows[1]):
-                        df = pd.DataFrame(rows[1:], columns=rows[0])
-                    else:
-                        df = pd.DataFrame(rows)
-                dfs.append(df)
-            except Exception:
-                pass
+        df = extrair_tabela_unica(table)
+        if not df.empty:
+            dfs.append(df)
     return dfs
 
 def limpar_colunas_df(df):
@@ -344,7 +349,7 @@ def obter_links_classificacao_dinamicos():
 
 def filtrar_tabela_valida(df):
     if df.empty:
-        return True
+        return False
     texto = df.to_string().lower()
     if "vencedor do jogo" in texto or "semifinal" in texto or "final" in texto:
         return False
@@ -354,40 +359,63 @@ def filtrar_tabela_valida(df):
 
 @st.cache_data(ttl=300)
 def obter_todas_tabelas_classificacao():
-    # Extrai diretamente da página principal da categoria, onde as tabelas de grupos aparecem sequencialmente
     soup_cat = carregar_dados_url(URL_CATEGORIA)
-    dfs_cat = extrair_tabelas_soup(soup_cat) if soup_cat else []
+    df_geral = pd.DataFrame()
+    df_grupo_a = pd.DataFrame()
+    df_grupo_b = pd.DataFrame()
     
-    tabelas_validas = []
-    for d in dfs_cat:
-        d_limpo = limpar_colunas_df(d)
-        if filtrar_tabela_valida(d_limpo):
-            tabelas_validas.append(d_limpo)
-            
-    df_geral = tabelas_validas[0] if len(tabelas_validas) > 0 else pd.DataFrame()
-    df_grupo_a = tabelas_validas[1] if len(tabelas_validas) > 1 else pd.DataFrame()
-    df_grupo_b = tabelas_validas[2] if len(tabelas_validas) > 2 else pd.DataFrame()
-    
-    # Fallback caso encontre menos tabelas na principal
+    if soup_cat:
+        # Procurar blocos de texto/títulos específicos na página para capturar rigorosamente cada grupo
+        for tag in soup_cat.find_all(["h2", "h3", "h4", "div", "span"], string=re.compile(r"geral|grupo\s*a|grupo\s*b", re.IGNORECASE)):
+            texto_tag = tag.get_text(strip=True).lower()
+            tabela = tag.find_next("table")
+            if tabela:
+                df = extrair_tabela_unica(tabela)
+                df_limpo = limpar_colunas_df(df)
+                if filtrar_tabela_valida(df_limpo):
+                    if "geral" in texto_tag and df_geral.empty:
+                        df_geral = df_limpo
+                    elif "grupo a" in texto_tag and df_grupo_a.empty:
+                        df_grupo_a = df_limpo
+                    elif "grupo b" in texto_tag and df_grupo_b.empty:
+                        df_grupo_b = df_limpo
+
+    # Fallback por índice sequencial na página principal caso algum não tenha sido mapeado por texto
+    if df_geral.empty or df_grupo_a.empty or df_grupo_b.empty:
+        dfs_cat = extrair_tabelas_soup(soup_cat) if soup_cat else []
+        tabelas_validas = [limpar_colunas_df(d) for d in dfs_cat if filtrar_tabela_valida(limpar_colunas_df(d))]
+        
+        if df_geral.empty and len(tabelas_validas) > 0:
+            df_geral = tabelas_validas[0]
+        if df_grupo_a.empty and len(tabelas_validas) > 1:
+            df_grupo_a = tabelas_validas[1]
+        if df_grupo_b.empty and len(tabelas_validas) > 2:
+            # Garantir que não duplica a tabela do grupo A
+            for t in tabelas_validas[2:]:
+                if not t.equals(df_grupo_a):
+                    df_grupo_b = t
+                    break
+
+    # Último recurso via links diretos se ainda faltar algum
     if df_grupo_a.empty or df_grupo_b.empty:
         links = obter_links_classificacao_dinamicos()
-        soup_ga = carregar_dados_url(links["grupo_a"])
-        soup_gb = carregar_dados_url(links["grupo_b"])
-        
-        dfs_ga = extrair_tabelas_soup(soup_ga) if soup_ga else []
-        dfs_gb = extrair_tabelas_soup(soup_gb) if soup_gb else []
-        
-        for d in dfs_ga:
-            d_limpo = limpar_colunas_df(d)
-            if filtrar_tabela_valida(d_limpo):
-                df_grupo_a = d_limpo
-                break
-                
-        for d in dfs_gb:
-            d_limpo = limpar_colunas_df(d)
-            if filtrar_tabela_valida(d_limpo) and not d_limpo.equals(df_grupo_a):
-                df_grupo_b = d_limpo
-                break
+        if df_grupo_a.empty:
+            soup_ga = carregar_dados_url(links["grupo_a"])
+            dfs_ga = extrair_tabelas_soup(soup_ga) if soup_ga else []
+            for d in dfs_ga:
+                d_limpo = limpar_colunas_df(d)
+                if filtrar_tabela_valida(d_limpo):
+                    df_grupo_a = d_limpo
+                    break
+                    
+        if df_grupo_b.empty:
+            soup_gb = carregar_dados_url(links["grupo_b"])
+            dfs_gb = extrair_tabelas_soup(soup_gb) if soup_gb else []
+            for d in dfs_gb:
+                d_limpo = limpar_colunas_df(d)
+                if filtrar_tabela_valida(d_limpo) and not d_limpo.equals(df_grupo_a):
+                    df_grupo_b = d_limpo
+                    break
 
     return df_geral, df_grupo_a, df_grupo_b
 
