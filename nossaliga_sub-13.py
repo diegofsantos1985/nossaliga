@@ -242,7 +242,7 @@ st.markdown(
 )
 
 # -----------------------------------------------------------------------------
-# ENDEREÇOS E HEADERS (URL de Classificação Geral Atualizada)
+# ENDEREÇOS E HEADERS
 # -----------------------------------------------------------------------------
 URL_CLASSIFICACAO = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/categoria/sub-13-masculino/19978/classificacao/geral/0"
 URL_ARTILHARIA = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/categoria/sub-13-masculino/19978/estatisticas/artilharia"
@@ -350,6 +350,54 @@ def formatar_equipe_com_escudo(nome_equipe, mapa_escudos):
     if url_escudo:
         return f'<div class="team-cell"><img src="{url_escudo}" class="team-logo" /><span>{nome_clean}</span></div>'
     return f'<span>{nome_clean}</span>'
+
+def formatar_tabela_classificacao_oficial(df, mapa_escudos):
+    if df.empty:
+        return df
+    
+    df = limpar_colunas_df(df)
+    novas_linhas = []
+    
+    for idx, row in df.iterrows():
+        if len(row) >= 11:
+            pos = str(row.iloc[0]).strip()
+            pos_clean = re.sub(r'[ºª°]', '', pos).strip()
+            pos_str = f"{pos_clean}º" if pos_clean.isdigit() else pos
+
+            nome_equipe = str(row.iloc[1]).strip()
+            if not nome_equipe or nome_equipe.lower() in ["none", "nan"] or nome_equipe.isdigit():
+                if len(row) > 2:
+                    nome_equipe = str(row.iloc[2]).strip()
+
+            eq_fmt = formatar_equipe_com_escudo(nome_equipe, mapa_escudos)
+
+            celula_classificacao = (
+                f'<div style="display: flex; align-items: center; gap: 12px;">'
+                f'<span style="font-weight: 800; color: #1e293b; min-width: 24px;">{pos_str}</span>'
+                f'{eq_fmt}'
+                f'</div>'
+            )
+
+            nova_linha = [celula_classificacao]
+            valores_estatisticas = []
+            for i in range(2, len(row)):
+                val = str(row.iloc[i]).strip()
+                if val and val.lower() not in ["none", "nan"]:
+                    valores_estatisticas.append(val)
+
+            nova_linha.extend(valores_estatisticas[:10])
+            novas_linhas.append(nova_linha)
+
+    colunas_oficiais = ["Classificação", "P", "J", "V", "E", "D", "GP", "GC", "SG", "Avg", "%A"]
+    if novas_linhas:
+        linhas_ajustadas = []
+        for nl in novas_linhas:
+            while len(nl) < len(colunas_oficiais):
+                nl.append("")
+            linhas_ajustadas.append(nl[:len(colunas_oficiais)])
+        return pd.DataFrame(linhas_ajustadas, columns=colunas_oficiais)
+
+    return df
 
 def renderizar_tabela_html(df):
     st.markdown(df.to_html(escape=False, index=False, classes="custom-table"), unsafe_allow_html=True)
@@ -652,18 +700,12 @@ elif opcao == "Classificação Sub-13":
         if dfs:
             dfs_formatadas = []
             for df in dfs:
-                df_fmt = limpar_colunas_df(df)
-                col_equipe = [c for c in df_fmt.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
-                if col_equipe:
-                    df_fmt[col_equipe[0]] = df_fmt[col_equipe[0]].apply(lambda e: formatar_equipe_com_escudo(e, mapa_escudos))
-                elif len(df_fmt.columns) >= 2:
-                    col_target = df_fmt.columns[1]
-                    df_fmt[col_target] = df_fmt[col_target].apply(lambda e: formatar_equipe_com_escudo(e, mapa_escudos))
+                df_fmt = formatar_tabela_classificacao_oficial(df, mapa_escudos)
                 dfs_formatadas.append(df_fmt)
 
             with tab_geral:
                 if dfs_formatadas:
-                    df_geral = pd.concat(dfs_formatadas, ignore_index=True)
+                    df_geral = dfs_formatadas[0]
                     renderizar_tabela_html(df_geral)
                 else:
                     st.warning("Não foi possível processar a tabela de classificação geral.")
@@ -737,7 +779,6 @@ elif opcao == "Artilharia":
             df_art_raw = limpar_colunas_df(dfs_art[0])
             
             novas_linhas = []
-            
             for index, row in df_art_raw.iterrows():
                 colocacao = row.iloc[0] if len(row) > 0 else (index + 1)
                 texto_misto = str(row.iloc[1]) if len(row) > 1 else ""
