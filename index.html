@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nossa Liga Futsal - Acompanhamento ao Vivo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1a73e8;
+            text-align: center;
+        }
+        .info-atualizacao {
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 25px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        h2 {
+            border-bottom: 2px solid #1a73e8;
+            padding-bottom: 5px;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #1a73e8;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Nossa Liga Futsal 2026</h1>
+        <div class="info-atualizacao">
+            Última atualização automática: <span id="ultima-atualizacao">A carregar...</span>
+        </div>
+
+        <div class="section">
+            <h2>Classificação</h2>
+            <div id="tabela-container">
+                <p>A carregar dados da tabela...</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Jogos</h2>
+            <div id="jogos-container">
+                <p>A carregar jogos...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function carregarDadosLiga() {
+            try {
+                // Vai buscar o dados.json gerado pelo GitHub Actions
+                const resposta = await fetch('dados.json');
+                if (!resposta.ok) {
+                    throw new Error('Não foi possível carregar os dados.');
+                }
+                
+                const dados = await resposta.json();
+
+                // Atualiza a data e hora da última atualização no ecrã
+                const elemData = document.getElementById('ultima-atualizacao');
+                if (elemData) {
+                    elemData.innerText = dados.ultima_atualizacao || 'Indisponível';
+                }
+
+                console.log("Dados carregados com sucesso:", dados);
+
+            } catch (erro) {
+                console.error("Erro ao carregar o JSON:", erro);
+                const elemData = document.getElementById('ultima-atualizacao');
+                if (elemData) {
+                    elemData.innerText = "Erro ao atualizar";
+                }
+            }
+        }
+
+        // Executa a função assim que a página estiver pronta
+        document.addEventListener('DOMContentLoaded', carregarDadosLiga);
+    </script>
+
+</body>
+</html>
