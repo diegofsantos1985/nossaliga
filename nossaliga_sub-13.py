@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Estilização CSS customizada (Otimizada para telemóveis e computadores)
+# Estilização CSS customizada (Otimizada para eliminar sombras/fantasmas nas fontes)
 st.markdown(
     """
     <style>
@@ -43,8 +43,8 @@ st.markdown(
         margin-bottom: 22px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.15);
     }
-    .header-title { font-size: 28px; font-weight: 800; margin: 0; color: #ffffff; }
-    .header-subtitle { font-size: 14px; color: #f8f063; margin-top: 4px; font-weight: 600; }
+    .header-title { font-size: 28px; font-weight: 800; margin: 0; color: #ffffff; text-shadow: none !important; }
+    .header-subtitle { font-size: 14px; color: #f8f063; margin-top: 4px; font-weight: 600; text-shadow: none !important; }
     
     /* Metrics Cards */
     .metric-card {
@@ -118,7 +118,7 @@ st.markdown(
         font-size: 11px;
     }
 
-    /* ESTILIZAÇÃO GLOBAL DAS ABAS (ST.TABS) - AJUSTADO PARA MÓVEL E DESKTOP */
+    /* ESTILIZAÇÃO GLOBAL DAS ABAS (ST.TABS) - CORRIGIDO CONTRA FANTASMAS/SOMBRAS */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
         background-color: transparent;
@@ -135,31 +135,32 @@ st.markdown(
         font-weight: 700 !important;
         font-size: 12px !important;
         border: none !important;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15) !important;
-        transition: all 0.2s ease-in-out !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
         height: auto !important;
         white-space: nowrap !important;
     }
 
     .stTabs [data-baseweb="tab"] * {
         color: #ffffff !important;
+        text-shadow: none !important;
     }
 
     .stTabs [data-baseweb="tab"]:hover {
         background-color: #1a0fb3 !important;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25) !important;
     }
 
     .stTabs [aria-selected="true"] {
         background-color: #080352 !important;
         color: #ffffff !important;
         border: 2px solid #3b82f6 !important;
-        box-shadow: 0 4px 12px rgba(17, 8, 136, 0.4) !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
     }
 
     .stTabs [aria-selected="true"] * {
         color: #ffffff !important;
+        text-shadow: none !important;
     }
 
     .stTabs [data-baseweb="tab-highlight"] {
@@ -185,12 +186,6 @@ st.markdown(
         min-height: 38px !important;
         height: 38px !important;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
-        transition: all 0.2s ease-in-out !important;
-    }
-
-    div[data-testid="stSelectbox"] > div > div:hover {
-        border-color: #1a0fb3 !important;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12) !important;
     }
 
     div[data-testid="stSelectbox"] svg {
@@ -200,6 +195,7 @@ st.markdown(
     div[data-testid="stSelectbox"] [data-baseweb="select"] * {
         color: #110888 !important;
         font-weight: 800 !important;
+        text-shadow: none !important;
     }
 
     .btn-limpar-container {
@@ -226,6 +222,7 @@ st.markdown(
         text-align: left;
         padding: 6px 8px;
         font-size: 11px;
+        text-shadow: none !important;
     }
     .custom-table td {
         padding: 5px 8px;
@@ -234,6 +231,7 @@ st.markdown(
         color: #110888 !important;
         font-weight: 800 !important;
         white-space: nowrap;
+        text-shadow: none !important;
     }
     .custom-table tr:hover {
         background-color: #f8fafc;
@@ -244,6 +242,7 @@ st.markdown(
         gap: 6px;
         font-weight: 800;
         color: #110888 !important;
+        text-shadow: none !important;
     }
     .team-logo {
         width: 18px;
@@ -456,8 +455,8 @@ def formatar_equipe_com_escudo(nome_equipe, mapa_escudos):
             break
 
     if url_escudo:
-        return f'<div class="team-cell"><img src="{url_escudo}" class="team-logo" /><span style="color: #110888 !important; font-weight: 800 !important;">{nome_clean}</span></div>'
-    return f'<span style="color: #110888 !important; font-weight: 800 !important;">{nome_clean}</span>'
+        return f'<div class="team-cell"><img src="{url_escudo}" class="team-logo" /><span style="color: #110888 !important; font-weight: 800 !important; text-shadow: none !important;">{nome_clean}</span></div>'
+    return f'<span style="color: #110888 !important; font-weight: 800 !important; text-shadow: none !important;">{nome_clean}</span>'
 
 def formatar_tabela_classificacao_oficial(df, mapa_escudos):
     if df.empty:
@@ -481,7 +480,7 @@ def formatar_tabela_classificacao_oficial(df, mapa_escudos):
 
             celula_classificacao = (
                 f'<div style="display: flex; align-items: center; gap: 8px;">'
-                f'<span style="font-weight: 800 !important; color: #110888 !important; min-width: 20px;">{pos_str}</span>'
+                f'<span style="font-weight: 800 !important; color: #110888 !important; text-shadow: none !important; min-width: 20px;">{pos_str}</span>'
                 f'{eq_fmt}'
                 f'</div>'
             )
