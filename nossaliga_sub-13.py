@@ -220,7 +220,8 @@ st.markdown(
         padding: 8px 14px;
         border-bottom: 1px solid #e2e8f0;
         font-size: 13px;
-        color: #1e293b;
+        color: #110888;
+        font-weight: 700;
     }
     .custom-table tr:hover {
         background-color: #f8fafc;
@@ -229,7 +230,8 @@ st.markdown(
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        font-weight: 600;
+        font-weight: 700;
+        color: #110888;
     }
     .team-logo {
         width: 22px;
@@ -322,8 +324,8 @@ def obter_links_classificacao_dinamicos():
     soup = carregar_dados_url(URL_CATEGORIA)
     links = {
         "geral": f"{URL_CATEGORIA}/classificacao/geral/0",
-        "grupo_a": "",
-        "grupo_b": ""
+        "grupo_a": f"{URL_CATEGORIA}/classificacao/grupo-a/0",
+        "grupo_b": f"{URL_CATEGORIA}/classificacao/grupo-b/0"
     }
     if soup:
         for a in soup.find_all("a", href=True):
@@ -337,14 +339,48 @@ def obter_links_classificacao_dinamicos():
                     links["grupo_a"] = full_url
                 elif "grupo-b" in href or "grupo b" in texto or "grupo_b" in href:
                     links["grupo_b"] = full_url
-                    
-    # Fallback URLs if not explicitly found via scraping links
-    if not links["grupo_a"]:
-        links["grupo_a"] = f"{URL_CATEGORIA}/classificacao/grupo-a/0"
-    if not links["grupo_b"]:
-        links["grupo_b"] = f"{URL_CATEGORIA}/classificacao/grupo-b/0"
-        
     return links
+
+@st.cache_data(ttl=300)
+def obter_todas_tabelas_classificacao():
+    links = obter_links_classificacao_dinamicos()
+    
+    soup_geral = carregar_dados_url(links["geral"])
+    soup_cat = carregar_dados_url(URL_CATEGORIA)
+    soup_ga = carregar_dados_url(links["grupo_a"])
+    soup_gb = carregar_dados_url(links["grupo_b"])
+    
+    dfs_geral = extrair_tabelas_soup(soup_geral) if soup_geral else []
+    dfs_cat = extrair_tabelas_soup(soup_cat) if soup_cat else []
+    dfs_ga = extrair_tabelas_soup(soup_ga) if soup_ga else []
+    dfs_gb = extrair_tabelas_soup(soup_gb) if soup_gb else []
+    
+    df_geral = dfs_geral[0] if dfs_geral else (dfs_cat[0] if dfs_cat else pd.DataFrame())
+    
+    df_grupo_a = pd.DataFrame()
+    df_grupo_b = pd.DataFrame()
+    
+    if dfs_ga:
+        df_grupo_a = dfs_ga[0]
+    if dfs_gb:
+        df_grupo_b = dfs_gb[0]
+        
+    # Fallback se os grupos estiverem nas tabelas adicionais da página geral ou categoria
+    if df_grupo_a.empty and len(dfs_geral) > 1:
+        df_grupo_a = dfs_geral[1]
+    elif df_grupo_a.empty and len(dfs_cat) > 1:
+        df_grupo_a = dfs_cat[1]
+        
+    if df_grupo_b.empty and len(dfs_geral) > 2:
+        df_grupo_b = dfs_geral[2]
+    elif df_grupo_b.empty and len(dfs_cat) > 2:
+        df_grupo_b = dfs_cat[2]
+    elif df_grupo_b.empty and len(dfs_geral) > 1 and df_grupo_a.empty:
+        df_grupo_a = dfs_geral[1]
+        if len(dfs_geral) > 2:
+            df_grupo_b = dfs_geral[2]
+            
+    return df_geral, df_grupo_a, df_grupo_b
 
 @st.cache_data(ttl=300)
 def obter_mapeamento_escudos():
@@ -376,8 +412,8 @@ def formatar_equipe_com_escudo(nome_equipe, mapa_escudos):
             break
 
     if url_escudo:
-        return f'<div class="team-cell"><img src="{url_escudo}" class="team-logo" /><span>{nome_clean}</span></div>'
-    return f'<span>{nome_clean}</span>'
+        return f'<div class="team-cell"><img src="{url_escudo}" class="team-logo" /><span style="color: #110888; font-weight: 700;">{nome_clean}</span></div>'
+    return f'<span style="color: #110888; font-weight: 700;">{nome_clean}</span>'
 
 def formatar_tabela_classificacao_oficial(df, mapa_escudos):
     if df.empty:
@@ -401,7 +437,7 @@ def formatar_tabela_classificacao_oficial(df, mapa_escudos):
 
             celula_classificacao = (
                 f'<div style="display: flex; align-items: center; gap: 12px;">'
-                f'<span style="font-weight: 800; color: #1e293b; min-width: 24px;">{pos_str}</span>'
+                f'<span style="font-weight: 800; color: #110888; min-width: 24px;">{pos_str}</span>'
                 f'{eq_fmt}'
                 f'</div>'
             )
@@ -458,48 +494,33 @@ def obter_posicoes_santa_maria():
     pos_geral = "N/I"
     pos_grupo = "N/I"
     
-    links = obter_links_classificacao_dinamicos()
-    soup_geral = carregar_dados_url(links["geral"])
-    dfs_geral = extrair_tabelas_soup(soup_geral) if soup_geral else []
+    df_geral, df_ga, df_gb = obter_todas_tabelas_classificacao()
         
-    if dfs_geral:
-        df_geral = limpar_colunas_df(dfs_geral[0])
-        col_eq = [c for c in df_geral.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
-        target_col = col_eq[0] if col_eq else df_geral.columns[1] if len(df_geral.columns) > 1 else df_geral.columns[0]
+    if not df_geral.empty:
+        df_g_limpo = limpar_colunas_df(df_geral)
+        col_eq = [c for c in df_g_limpo.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
+        target_col = col_eq[0] if col_eq else df_g_limpo.columns[1] if len(df_g_limpo.columns) > 1 else df_g_limpo.columns[0]
         
-        for idx, row in df_geral.iterrows():
+        for idx, row in df_g_limpo.iterrows():
             if "santa maria" in str(row[target_col]).lower():
-                col_pos = df_geral.columns[0]
+                col_pos = df_g_limpo.columns[0]
                 val_pos = re.sub(r'[ºª°]', '', str(row[col_pos])).strip()
                 pos_geral = f"{val_pos}º" if val_pos.isdigit() else f"{row[col_pos]}º"
                 break
 
-    soup_ga = carregar_dados_url(links["grupo_a"])
-    dfs_ga = extrair_tabelas_soup(soup_ga) if soup_ga else []
-    if dfs_ga:
-        df_ga = limpar_colunas_df(dfs_ga[0])
-        col_eq_ga = [c for c in df_ga.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
-        t_col = col_eq_ga[0] if col_eq_ga else df_ga.columns[1] if len(df_ga.columns) > 1 else df_ga.columns[0]
-        for idx, row in df_ga.iterrows():
-            if "santa maria" in str(row[t_col]).lower():
-                col_pos = df_ga.columns[0]
-                val_pos = re.sub(r'[ºª°]', '', str(row[col_pos])).strip()
-                pos_grupo = f"{val_pos}º" if val_pos.isdigit() else f"{row[col_pos]}º"
-                break
-                
-    if pos_grupo == "N/I":
-        soup_gb = carregar_dados_url(links["grupo_b"])
-        dfs_gb = extrair_tabelas_soup(soup_gb) if soup_gb else []
-        if dfs_gb:
-            df_gb = limpar_colunas_df(dfs_gb[0])
-            col_eq_gb = [c for c in df_gb.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
-            t_col_b = col_eq_gb[0] if col_eq_gb else df_gb.columns[1] if len(df_gb.columns) > 1 else df_gb.columns[0]
-            for idx, row in df_gb.iterrows():
-                if "santa maria" in str(row[t_col_b]).lower():
-                    col_pos = df_gb.columns[0]
+    for df_g_grupo in [df_ga, df_gb]:
+        if not df_g_grupo.empty:
+            df_gp_limpo = limpar_colunas_df(df_g_grupo)
+            col_eq_gp = [c for c in df_gp_limpo.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
+            t_col = col_eq_gp[0] if col_eq_gp else df_gp_limpo.columns[1] if len(df_gp_limpo.columns) > 1 else df_gp_limpo.columns[0]
+            for idx, row in df_gp_limpo.iterrows():
+                if "santa maria" in str(row[t_col]).lower():
+                    col_pos = df_gp_limpo.columns[0]
                     val_pos = re.sub(r'[ºª°]', '', str(row[col_pos])).strip()
                     pos_grupo = f"{val_pos}º" if val_pos.isdigit() else f"{row[col_pos]}º"
                     break
+        if pos_grupo != "N/I":
+            break
 
     return pos_geral, pos_grupo
 
@@ -734,13 +755,13 @@ elif opcao == "Classificação Sub-13":
     botao_voltar_inicio("classificacao")
     st.subheader("📊 Classificação — Sub-13 Masculino")
     
+    df_geral_raw, df_ga_raw, df_gb_raw = obter_todas_tabelas_classificacao()
+    
     tab_geral, tab_grupos = st.tabs(["🌐 Classificação Geral", "🏆 Classificação por Grupos"])
     
     with tab_geral:
-        soup_geral = carregar_dados_url(links_classificacao["geral"])
-        dfs_geral = extrair_tabelas_soup(soup_geral) if soup_geral else []
-        if dfs_geral:
-            df_g_fmt = formatar_tabela_classificacao_oficial(dfs_geral[0], mapa_escudos)
+        if not df_geral_raw.empty:
+            df_g_fmt = formatar_tabela_classificacao_oficial(df_geral_raw, mapa_escudos)
             renderizar_tabela_html(df_g_fmt)
         else:
             st.warning("Não foi possível carregar a tabela de classificação geral.")
@@ -749,20 +770,16 @@ elif opcao == "Classificação Sub-13":
         col_g1, col_g2 = st.columns(2)
         with col_g1:
             st.markdown("### 🅰️ Grupo A")
-            soup_ga = carregar_dados_url(links_classificacao["grupo_a"])
-            dfs_ga = extrair_tabelas_soup(soup_ga) if soup_ga else []
-            if dfs_ga:
-                df_ga_fmt = formatar_tabela_classificacao_oficial(dfs_ga[0], mapa_escudos)
+            if not df_ga_raw.empty:
+                df_ga_fmt = formatar_tabela_classificacao_oficial(df_ga_raw, mapa_escudos)
                 renderizar_tabela_html(df_ga_fmt)
             else:
                 st.info("Dados do Grupo A indisponíveis no momento.")
                 
         with col_g2:
             st.markdown("### 🅱️ Grupo B")
-            soup_gb = carregar_dados_url(links_classificacao["grupo_b"])
-            dfs_gb = extrair_tabelas_soup(soup_gb) if soup_gb else []
-            if dfs_gb:
-                df_gb_fmt = formatar_tabela_classificacao_oficial(dfs_gb[0], mapa_escudos)
+            if not df_gb_raw.empty:
+                df_gb_fmt = formatar_tabela_classificacao_oficial(df_gb_raw, mapa_escudos)
                 renderizar_tabela_html(df_gb_fmt)
             else:
                 st.info("Dados do Grupo B indisponíveis no momento.")
