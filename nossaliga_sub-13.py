@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Estilização CSS customizada (Fundo bege claro e abas corrigidas)
+# Estilização CSS customizada (Fundo bege claro e abas corrigidas com força total)
 st.markdown(
     """
     <style>
@@ -144,7 +144,7 @@ st.markdown(
         font-size: 11px;
     }
 
-    /* CORREÇÃO ROBUSTA DA ESTILIZAÇÃO DAS ABAS (ST.TABS) - TEXTO AZUL ESCURO QUANDO INATIVAS */
+    /* CORREÇÃO DEFINITIVA DAS ABAS (ST.TABS) - FORÇANDO COR AZUL ESCURO NA ABA INATIVA */
     div.stTabs [data-baseweb="tab-list"] {
         gap: 8px !important;
         background-color: transparent !important;
@@ -161,10 +161,13 @@ st.markdown(
         box-shadow: 0 2px 6px rgba(0,0,0,0.05) !important;
     }
 
-    div.stTabs [data-baseweb="tab"] p, 
-    div.stTabs [data-baseweb="tab"] div, 
-    div.stTabs [data-baseweb="tab"] span {
+    /* Aba Inativa (Força azul escuro em todos os elementos internos) */
+    div.stTabs [data-baseweb="tab"][aria-selected="false"],
+    div.stTabs [data-baseweb="tab"][aria-selected="false"] p, 
+    div.stTabs [data-baseweb="tab"][aria-selected="false"] div, 
+    div.stTabs [data-baseweb="tab"][aria-selected="false"] span {
         color: #110888 !important;
+        -webkit-text-fill-color: #110888 !important;
         font-weight: 800 !important;
         font-size: 13px !important;
         text-shadow: none !important;
@@ -174,15 +177,18 @@ st.markdown(
         background-color: #f1f5f9 !important;
     }
 
+    /* Aba Ativa (Fundo azul escuro e texto branco) */
     div.stTabs [data-baseweb="tab"][aria-selected="true"] {
         background-color: #110888 !important;
         border: 2px solid #110888 !important;
     }
 
+    div.stTabs [data-baseweb="tab"][aria-selected="true"],
     div.stTabs [data-baseweb="tab"][aria-selected="true"] p,
     div.stTabs [data-baseweb="tab"][aria-selected="true"] div,
     div.stTabs [data-baseweb="tab"][aria-selected="true"] span {
         color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
     }
 
     div.stTabs [data-baseweb="tab-highlight"] {
