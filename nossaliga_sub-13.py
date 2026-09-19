@@ -311,7 +311,6 @@ URL_CARTOES = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edi
 URL_SUSPENSOES = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/categoria/sub-13-masculino/19978/estatisticas/suspensoes"
 URL_JOGOS = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/impressao/categoria/19978/0"
 URL_CLASSIFICACAO_GERAL = f"{URL_CATEGORIA}/classificacao/geral/0"
-URL_EQUIPE_SANTA_MARIA_BASE = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/equipe/colegio-santa-maria/42735"
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
@@ -683,8 +682,8 @@ opcoes_menu = [
     "Jogos", 
     "Artilharia", 
     "Cartões Amarelos e Vermelhos", 
-    "Suspensão", 
-    "Atletas Sub-13 Santa Maria"
+    "Suspensão",
+    "Atletas Colégio Santa Maria - Sub-13"
 ]
 
 if "aba_radio" not in st.session_state:
@@ -1203,73 +1202,34 @@ elif opcao == "Suspensão":
     else:
         st.error("Erro na comunicação com o servidor da liga.")
 
-elif opcao == "Atletas Sub-13 Santa Maria":
-    botao_voltar_inicio("atletas_sub13_sm")
-    renderizar_cabecalho_secao("👥 Atletas da Categoria Sub-13 — Colégio Santa Maria")
+elif opcao == "Atletas Colégio Santa Maria - Sub-13":
+    botao_voltar_inicio("atletas_csm")
+    renderizar_cabecalho_secao("🏃 Atletas — Colégio Santa Maria (Sub-13)")
     
-    # 1. Carrega a página principal da equipe para encontrar o link direto da guia/aba Sub-13
-    soup_equipe_base = carregar_dados_url(URL_EQUIPE_SANTA_MARIA_BASE)
-    url_guia_sub13 = URL_EQUIPE_SANTA_MARIA_BASE
+    atletas_csm = sorted([
+        "Bruno Monteiro Loureiro Amorim Filho",
+        "Filipe Rodrigues de Araújo Filho",
+        "Francisco Ouriques Lacerda Vidal",
+        "Gabriel Modesto Pereira Minghini Quirino dos Santos",
+        "Guilherme Canto Motta Gomes",
+        "Guilherme Marroquim Braga de Morais",
+        "Heitor Marques Maciel Pinheiro",
+        "Henrique Carvalho Tenório Cavalcanti",
+        "Henrique Ponce Maranhão Miranda",
+        "João Antônio Wanderley Azevedo Saraiva",
+        "José Anacleto de Andrade do Nascimento Neto",
+        "José Carlos Pereira Santos Neto",
+        "Jose Matheus Locio Barbosa",
+        "Lucca Normande Peixoto",
+        "Miguel Freire de Araújo Pereira",
+        "Pedro Henrique Vaz Manso Braga",
+        "Théo Dall Agnol Albuquerque",
+        "Willyam Ponzi Neto"
+    ])
     
-    if soup_equipe_base:
-        for a in soup_equipe_base.find_all("a", href=True):
-            texto_link = a.get_text(strip=True).lower()
-            href_link = a['href'].lower()
-            if ("sub-13" in texto_link or "sub13" in texto_link or "sub-13" in href_link or "sub13" in href_link) and "categoria" in href_link:
-                url_guia_sub13 = a['href']
-                if not url_guia_sub13.startswith("http"):
-                    url_guia_sub13 = f"https://www.nossaliga.com.br{url_guia_sub13}"
-                break
-
-    # 2. Acessa a guia específica do Sub-13 da equipe
-    soup_sub13 = carregar_dados_url(url_guia_sub13)
+    df_atletas = pd.DataFrame({
+        "Nº": [f"{i}º" for i in range(1, len(atletas_csm) + 1)],
+        "Nome do Atleta": atletas_csm
+    })
     
-    if soup_sub13:
-        dfs_atletas = extrair_tabelas_soup(soup_sub13)
-        df_final_atletas = pd.DataFrame()
-        
-        if dfs_atletas:
-            frames_filtrados = []
-            for d in dfs_atletas:
-                df_limpo = limpar_colunas_df(d)
-                if not df_limpo.empty:
-                    # Verifica se a tabela contém nomes de atletas ou dados relevantes de elenco
-                    texto_df = df_limpo.astype(str).agg(' '.join, axis=1).str.lower()
-                    if len(df_limpo) > 1 or any(k in texto_df.values[0] for k in ["nome", "atleta", "jogador", "nº", "numero"]):
-                        frames_filtrados.append(df_limpo)
-                        
-            if frames_filtrados:
-                df_final_atletas = pd.concat(frames_filtrados, ignore_index=True)
-                
-                # Remove colunas duplicadas se houver
-                df_final_atletas = df_final_atletas.loc[:, ~df_final_atletas.columns.duplicated()]
-                
-                if not df_final_atletas.empty:
-                    st.markdown(f"<div style='font-size: 13px; color: #f8f063; font-weight: 700; margin-bottom: 12px;'>📋 Elenco oficial extraído da guia Sub-13</div>", unsafe_allow_html=True)
-                    renderizar_tabela_html(df_final_atletas)
-                else:
-                    st.info("Nenhum atleta encontrado na tabela da guia Sub-13.")
-            else:
-                st.info("Nenhuma tabela válida de atletas localizada na guia Sub-13.")
-        else:
-            # Caso os atletas estejam listados em cartões ou blocos de texto na guia Sub-13
-            cards_atletas = soup_sub13.find_all(["div", "section"], class_=re.compile(r"atleta|jogador|elenco|card", re.IGNORECASE))
-            encontrou = False
-            if cards_atletas:
-                for card in cards_atletas:
-                    texto_card = card.get_text(strip=True)
-                    if len(texto_card) > 3:
-                        st.markdown(f"<div style='background:#ffffff; color:#110888; padding:10px; border-radius:8px; margin-bottom:8px; font-weight:800; font-size:12px;'>{texto_card}</div>", unsafe_allow_html=True)
-                        encontrou = True
-            
-            if not encontrou:
-                for p in soup_sub13.find_all(["p", "li", "span", "div"]):
-                    t = p.get_text(strip=True)
-                    if len(t) > 5 and ("atleta" in t.lower() or "jogador" in t.lower()):
-                        st.markdown(f"<div style='background:#ffffff; color:#110888; padding:10px; border-radius:8px; margin-bottom:8px; font-weight:800; font-size:12px;'>{t}</div>", unsafe_allow_html=True)
-                        encontrou = True
-            
-            if not encontrou:
-                st.info("Nenhum registro de atleta foi localizado diretamente na guia Sub-13 desta equipe.")
-    else:
-        st.error("Erro na comunicação com o servidor da liga ao carregar a guia Sub-13 do Colégio Santa Maria.")
+    renderizar_tabela_html(df_atletas)
