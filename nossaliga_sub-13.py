@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Estilização CSS customizada (Fundo bege claro e abas corrigidas com força total)
+# Estilização CSS customizada (Fundo bege claro e abas com texto preto no mobile)
 st.markdown(
     """
     <style>
@@ -144,7 +144,7 @@ st.markdown(
         font-size: 11px;
     }
 
-    /* CORREÇÃO DEFINITIVA DAS ABAS (ST.TABS) - FORÇANDO COR AZUL ESCURO NA ABA INATIVA */
+    /* CORREÇÃO DEFINITIVA DAS ABAS (ST.TABS) - TEXTO PRETO NAS ABAS INATIVAS */
     div.stTabs [data-baseweb="tab-list"] {
         gap: 8px !important;
         background-color: transparent !important;
@@ -161,13 +161,14 @@ st.markdown(
         box-shadow: 0 2px 6px rgba(0,0,0,0.05) !important;
     }
 
-    /* Aba Inativa (Força azul escuro em todos os elementos internos) */
+    /* Aba Inativa (Força cor preta absoluta em todos os elementos e estados mobile) */
     div.stTabs [data-baseweb="tab"][aria-selected="false"],
     div.stTabs [data-baseweb="tab"][aria-selected="false"] p, 
     div.stTabs [data-baseweb="tab"][aria-selected="false"] div, 
-    div.stTabs [data-baseweb="tab"][aria-selected="false"] span {
-        color: #110888 !important;
-        -webkit-text-fill-color: #110888 !important;
+    div.stTabs [data-baseweb="tab"][aria-selected="false"] span,
+    div.stTabs button[data-baseweb="tab"][aria-selected="false"] * {
+        color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important;
         font-weight: 800 !important;
         font-size: 13px !important;
         text-shadow: none !important;
@@ -186,7 +187,8 @@ st.markdown(
     div.stTabs [data-baseweb="tab"][aria-selected="true"],
     div.stTabs [data-baseweb="tab"][aria-selected="true"] p,
     div.stTabs [data-baseweb="tab"][aria-selected="true"] div,
-    div.stTabs [data-baseweb="tab"][aria-selected="true"] span {
+    div.stTabs [data-baseweb="tab"][aria-selected="true"] span,
+    div.stTabs button[data-baseweb="tab"][aria-selected="true"] * {
         color: #ffffff !important;
         -webkit-text-fill-color: #ffffff !important;
     }
