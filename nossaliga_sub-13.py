@@ -914,7 +914,7 @@ elif opcao == "Artilharia":
                 texto_misto = str(row.iloc[1]) if len(row) > 1 else ""
                 gols = row.iloc[2] if len(row) > 2 else ""
 
-                padrao_separacao = r"\b(colégio|colegio|escola|mackenzie)\b"
+                padrao_separacao = r"\b(colégio|colegio|escola|mackenzie|sport|náutico|nautico|santa cruz|cruz|america|américa|retrô|retro|flamengo|vasco|botafogo|fluminense|bahia|vitória|vitoria|ceará|ceara|fortaleza)\b"
                 match = re.search(padrao_separacao, texto_misto, re.IGNORECASE)
 
                 if match:
@@ -922,8 +922,15 @@ elif opcao == "Artilharia":
                     atleta = texto_misto[:ponto_corte].strip().title()
                     equipe = texto_misto[ponto_corte:].strip().title()
                 else:
+                    equipe_encontrada = "Não identificada"
                     atleta = texto_misto.strip().title()
-                    equipe = "Não identificada"
+                    for k in mapa_escudos.keys():
+                        if k in texto_misto.lower():
+                            idx_k = texto_misto.lower().find(k)
+                            atleta = texto_misto[:idx_k].strip().title()
+                            equipe_encontrada = texto_misto[idx_k:].strip().title()
+                            break
+                    equipe = equipe_encontrada
 
                 novas_linhas.append({
                     "Colocação": colocacao,
@@ -971,8 +978,14 @@ elif opcao == "Cartões Amarelos e Vermelhos":
         df_amarelos = pd.concat(amarelos_list, ignore_index=True) if amarelos_list else pd.DataFrame()
         df_vermelhos = pd.concat(vermelhos_list, ignore_index=True) if vermelhos_list else pd.DataFrame()
         
-        eqs_amarelos = df_amarelos["Equipe"].dropna().unique() if "Equipe" in df_amarelos.columns else []
-        eqs_vermelhos = df_vermelhos["Equipe"].dropna().unique() if "Equipe" in df_vermelhos.columns else []
+        for df_c in [df_amarelos, df_vermelhos]:
+            if not df_c.empty:
+                for col in df_c.columns:
+                    if col.lower() in ["clube", "equipe/clube"]:
+                        df_c.rename(columns={col: "Equipe"}, inplace=True)
+
+        eqs_amarelos = df_amarelos["Equipe"].dropna().unique() if not df_amarelos.empty and "Equipe" in df_amarelos.columns else []
+        eqs_vermelhos = df_vermelhos["Equipe"].dropna().unique() if not df_vermelhos.empty and "Equipe" in df_vermelhos.columns else []
         todas_eqs = list(set(list(eqs_amarelos) + list(eqs_vermelhos)))
         
         equipe_sel = criar_filtro_equipe(todas_eqs, key="filtro_cartoes")
@@ -1017,7 +1030,11 @@ elif opcao == "Suspensão":
             dfs_susp_limpos = [limpar_colunas_df(d) for d in dfs_susp]
             df_bruto = pd.concat(dfs_susp_limpos, ignore_index=True)
             
-            cols_equipe = [c for c in df_bruto.columns if "equipe" in str(c).lower()]
+            for col in df_bruto.columns:
+                if col.lower() in ["clube", "equipe/clube"]:
+                    df_bruto.rename(columns={col: "Equipe"}, inplace=True)
+
+            cols_equipe = [c for c in df_bruto.columns if "equipe" in str(c).lower() or "clube" in str(c).lower()]
             todas_eqs = []
             for c in cols_equipe:
                 todas_eqs.extend(df_bruto[c].dropna().unique())
@@ -1045,7 +1062,8 @@ elif opcao == "Suspensão":
                     ].copy()
                     
                     if not df_atl.empty:
-                        df_atl["Equipe"] = df_atl["Equipe"].apply(lambda e: formatar_equipe_com_escudo(e, mapa_escudos))
+                        if "Equipe" in df_atl.columns:
+                            df_atl["Equipe"] = df_atl["Equipe"].apply(lambda e: formatar_equipe_com_escudo(e, mapa_escudos))
                         cols_desejadas = ["Equipe", "Atleta", "Penalização", "Situação"]
                         cols_finais = [c for c in cols_desejadas if c in df_atl.columns]
                         renderizar_tabela_html(df_atl[cols_finais])
@@ -1116,8 +1134,9 @@ elif opcao == "Suspensão":
                 if not df_eq.empty:
                     col_desc = [c for c in df_eq.columns if "descrição" in str(c).lower() or "ocorrencia" in str(c).lower()]
                     
-                    df_eq["Equipe"] = df_eq["Equipe"].apply(lambda e: formatar_equipe_com_escudo(e, mapa_escudos))
-                    cols_eq = ["Equipe"]
+                    if "Equipe" in df_eq.columns:
+                        df_eq["Equipe"] = df_eq["Equipe"].apply(lambda e: formatar_equipe_com_escudo(e, mapa_escudos))
+                    cols_eq = ["Equipe"] if "Equipe" in df_eq.columns else []
                     renomear_eq = {}
                     
                     if col_desc:
