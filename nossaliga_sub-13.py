@@ -1229,7 +1229,6 @@ elif opcao == "Atletas — Colégio Santa Maria (Sub-13)":
     ]
     
     df_atletas = pd.DataFrame({
-        "Nº": [f"{i}º" for i in range(1, len(atletas_csm) + 1)],
         "Nº da Camisa": [item[1] for item in atletas_csm],
         "Nome do Atleta": [item[0] for item in atletas_csm]
     })
