@@ -683,7 +683,7 @@ opcoes_menu = [
     "Artilharia", 
     "Cartões Amarelos e Vermelhos", 
     "Suspensão",
-    "Atletas Colégio Santa Maria - Sub-13"
+    "Atletas — Colégio Santa Maria (Sub-13)"
 ]
 
 if "aba_radio" not in st.session_state:
@@ -1202,11 +1202,12 @@ elif opcao == "Suspensão":
     else:
         st.error("Erro na comunicação com o servidor da liga.")
 
-elif opcao == "Atletas Colégio Santa Maria - Sub-13":
+elif opcao == "Atletas — Colégio Santa Maria (Sub-13)":
     botao_voltar_inicio("atletas_csm")
     renderizar_cabecalho_secao("🏃 Atletas — Colégio Santa Maria (Sub-13)")
     
     atletas_csm = sorted([
+        "André Monte Figueiredo",
         "Bruno Monteiro Loureiro Amorim Filho",
         "Filipe Rodrigues de Araújo Filho",
         "Francisco Ouriques Lacerda Vidal",
