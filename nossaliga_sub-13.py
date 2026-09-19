@@ -195,7 +195,7 @@ st.markdown(
         display: none !important;
     }
 
-    /* ESTILIZAÇÃO DOS FILTROS (ST.SELECTBOX) E CORREÇÃO DO TEXTO SELECIONADO */
+    /* ESTILIZAÇÃO DOS FILTROS (ST.SELECTBOX) COM ALTO CONTRASTE */
     div[data-testid="stSelectbox"] label {
         font-size: 12px !important;
         font-weight: 800 !important;
@@ -206,25 +206,25 @@ st.markdown(
     }
 
     div[data-testid="stSelectbox"] > div > div {
-        background-color: #ffffff !important;
-        color: #110888 !important;
+        background-color: #110888 !important;
+        color: #ffffff !important;
         border-radius: 8px !important;
-        border: 2px solid #110888 !important;
+        border: 2px solid #ffffff !important;
         font-weight: 800 !important;
-        min-height: 38px !important;
-        height: 38px !important;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+        min-height: 40px !important;
+        height: 40px !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
     }
 
     div[data-testid="stSelectbox"] svg {
-        fill: #110888 !important;
+        fill: #ffffff !important;
     }
 
     div[data-testid="stSelectbox"] [data-baseweb="select"] *,
     div[data-testid="stSelectbox"] div[data-baseweb="select"] span,
     div[data-testid="stSelectbox"] div[data-baseweb="select"] div {
-        color: #110888 !important;
-        -webkit-text-fill-color: #110888 !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
         font-weight: 800 !important;
     }
 
