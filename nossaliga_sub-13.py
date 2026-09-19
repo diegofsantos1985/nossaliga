@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Estilização CSS customizada (Otimizada para eliminar sombras e padronizar fundos azuis)
+# Estilização CSS customizada (Correção robusta para as abas st.tabs)
 st.markdown(
     """
     <style>
@@ -143,48 +143,42 @@ st.markdown(
         font-size: 11px;
     }
 
-    /* ESTILIZAÇÃO GLOBAL DAS ABAS (ST.TABS) COM FUNDO AZUL SÓLIDO */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-        background-color: transparent;
+    /* CORREÇÃO ROBUSTA DA ESTILIZAÇÃO DAS ABAS (ST.TABS) */
+    div.stTabs [data-baseweb="tab-list"] {
+        gap: 8px !important;
+        background-color: transparent !important;
         border-bottom: none !important;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
+        margin-bottom: 20px !important;
     }
 
-    .stTabs [data-baseweb="tab"] {
+    div.stTabs [data-baseweb="tab"] {
         background-color: #110888 !important;
-        color: #ffffff !important;
         border-radius: 8px !important;
-        padding: 12px 20px !important;
-        font-weight: 800 !important;
-        font-size: 13px !important;
+        padding: 10px 20px !important;
         border: none !important;
         height: auto !important;
-        white-space: nowrap !important;
         box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
     }
 
-    .stTabs [data-baseweb="tab"] * {
+    div.stTabs [data-baseweb="tab"] p, 
+    div.stTabs [data-baseweb="tab"] div, 
+    div.stTabs [data-baseweb="tab"] span {
         color: #ffffff !important;
+        font-weight: 800 !important;
+        font-size: 13px !important;
         text-shadow: none !important;
     }
 
-    .stTabs [data-baseweb="tab"]:hover {
+    div.stTabs [data-baseweb="tab"]:hover {
         background-color: #1a0fb3 !important;
     }
 
-    .stTabs [aria-selected="true"] {
+    div.stTabs [data-baseweb="tab"][aria-selected="true"] {
         background-color: #080352 !important;
-        color: #ffffff !important;
         border: 2px solid #3b82f6 !important;
     }
 
-    .stTabs [aria-selected="true"] * {
-        color: #ffffff !important;
-    }
-
-    .stTabs [data-baseweb="tab-highlight"] {
+    div.stTabs [data-baseweb="tab-highlight"] {
         display: none !important;
     }
 
