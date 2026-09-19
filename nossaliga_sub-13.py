@@ -311,6 +311,7 @@ URL_CARTOES = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edi
 URL_SUSPENSOES = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/categoria/sub-13-masculino/19978/estatisticas/suspensoes"
 URL_JOGOS = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/impressao/categoria/19978/0"
 URL_CLASSIFICACAO_GERAL = f"{URL_CATEGORIA}/classificacao/geral/0"
+URL_ATLETAS_SANTA_MARIA = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/equipe/colegio-santa-maria/42735"
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
@@ -676,7 +677,15 @@ if st.sidebar.button("🔄 Atualizar Dados Agora"):
     st.cache_data.clear()
     st.rerun()
 
-opcoes_menu = ["Início", "Classificação Sub-13", "Jogos", "Artilharia", "Cartões Amarelos e Vermelhos", "Suspensão"]
+opcoes_menu = [
+    "Início", 
+    "Classificação Sub-13", 
+    "Jogos", 
+    "Artilharia", 
+    "Cartões Amarelos e Vermelhos", 
+    "Suspensão", 
+    "Atletas Colégio Santa Maria"
+]
 
 if "aba_radio" not in st.session_state:
     st.session_state["aba_radio"] = "Início"
@@ -1193,3 +1202,35 @@ elif opcao == "Suspensão":
                 st.info("Nenhum dado encontrado.")
     else:
         st.error("Erro na comunicação com o servidor da liga.")
+
+elif opcao == "Atletas Colégio Santa Maria":
+    botao_voltar_inicio("atletas_sm")
+    renderizar_cabecalho_secao("👥 Elenco e Atletas — Colégio Santa Maria")
+    soup_atletas = carregar_dados_url(URL_ATLETAS_SANTA_MARIA)
+    
+    if soup_atletas:
+        dfs_atletas = extrair_tabelas_soup(soup_atletas)
+        if dfs_atletas:
+            for d in dfs_atletas:
+                df_limpo = limpar_colunas_df(d)
+                if not df_limpo.empty:
+                    renderizar_tabela_html(df_limpo)
+        else:
+            # Caso os atletas estejam listados por blocos de imagens/cards em vez de tabela única
+            st.info("Exibindo informações da página de atletas do Colégio Santa Maria.")
+            
+            # Tentativa de raspar cards ou elementos de texto da página de equipe
+            cards_atletas = soup_atletas.find_all(["div", "section"], class_=re.compile(r"atleta|jogador|elenco|card", re.IGNORECASE))
+            if cards_atletas:
+                for card in cards_atletas:
+                    texto_card = card.get_text(strip=True)
+                    if len(texto_card) > 3:
+                        st.markdown(f"<div style='background:#ffffff; color:#110888; padding:10px; border-radius:8px; margin-bottom:8px; font-weight:800; font-size:12px;'>{texto_card}</div>", unsafe_allow_html=True)
+            else:
+                # Fallback caso a estrutura seja diferente
+                for p in soup_atletas.find_all(["p", "li", "span"]):
+                    t = p.get_text(strip=True)
+                    if len(t) > 5:
+                        st.write(t)
+    else:
+        st.error("Erro na comunicação com o servidor da liga ao carregar os atletas do Colégio Santa Maria.")
