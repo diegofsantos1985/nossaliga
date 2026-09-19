@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Estilização CSS customizada (Fundo ajustado para bege claro)
+# Estilização CSS customizada (Fundo bege claro e abas corrigidas)
 st.markdown(
     """
     <style>
@@ -144,7 +144,7 @@ st.markdown(
         font-size: 11px;
     }
 
-    /* CORREÇÃO ROBUSTA DA ESTILIZAÇÃO DAS ABAS (ST.TABS) */
+    /* CORREÇÃO ROBUSTA DA ESTILIZAÇÃO DAS ABAS (ST.TABS) - TEXTO AZUL ESCURO QUANDO INATIVAS */
     div.stTabs [data-baseweb="tab-list"] {
         gap: 8px !important;
         background-color: transparent !important;
@@ -153,30 +153,36 @@ st.markdown(
     }
 
     div.stTabs [data-baseweb="tab"] {
-        background-color: #110888 !important;
+        background-color: #ffffff !important;
         border-radius: 8px !important;
         padding: 10px 20px !important;
-        border: none !important;
+        border: 1px solid #cbd5e1 !important;
         height: auto !important;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05) !important;
     }
 
     div.stTabs [data-baseweb="tab"] p, 
     div.stTabs [data-baseweb="tab"] div, 
     div.stTabs [data-baseweb="tab"] span {
-        color: #ffffff !important;
+        color: #110888 !important;
         font-weight: 800 !important;
         font-size: 13px !important;
         text-shadow: none !important;
     }
 
     div.stTabs [data-baseweb="tab"]:hover {
-        background-color: #1a0fb3 !important;
+        background-color: #f1f5f9 !important;
     }
 
     div.stTabs [data-baseweb="tab"][aria-selected="true"] {
-        background-color: #080352 !important;
-        border: 2px solid #3b82f6 !important;
+        background-color: #110888 !important;
+        border: 2px solid #110888 !important;
+    }
+
+    div.stTabs [data-baseweb="tab"][aria-selected="true"] p,
+    div.stTabs [data-baseweb="tab"][aria-selected="true"] div,
+    div.stTabs [data-baseweb="tab"][aria-selected="true"] span {
+        color: #ffffff !important;
     }
 
     div.stTabs [data-baseweb="tab-highlight"] {
