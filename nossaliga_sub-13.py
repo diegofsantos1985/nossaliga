@@ -88,7 +88,7 @@ st.markdown(
     .match-box {
         background: #ffffff;
         border-radius: 12px;
-        padding: 20px;
+        padding: 16px;
         border: 1px solid #cbd5e1;
         box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         margin-bottom: 20px;
@@ -99,23 +99,27 @@ st.markdown(
         color: #f8f063;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        margin-bottom: 15px;
+        margin-bottom: 12px;
     }
     .team-name { 
-        font-size: 18px; 
+        font-size: 14px; 
         font-weight: 800; 
         color: #0f172a; 
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
+        gap: 6px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
     }
     .score-badge {
-        font-size: 22px;
+        font-size: 18px;
         font-weight: 800;
         color: #160e91;
         background: #f1f5f9;
-        padding: 8px 18px;
+        padding: 6px 12px;
         border-radius: 8px;
         display: inline-block;
     }
@@ -283,11 +287,15 @@ st.markdown(
         gap: 6px;
         font-weight: 800;
         color: #110888 !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .team-logo {
         width: 18px;
         height: 18px;
         object-fit: contain;
+        flex-shrink: 0;
     }
     </style>
 """,
@@ -505,8 +513,8 @@ def formatar_equipe_com_escudo(nome_equipe, mapa_escudos):
             break
 
     if url_escudo:
-        return f'<div class="team-cell"><img src="{url_escudo}" class="team-logo" /><span style="color: #110888 !important; font-weight: 800 !important;">{nome_clean}</span></div>'
-    return f'<span style="color: #110888 !important; font-weight: 800 !important;">{nome_clean}</span>'
+        return f'<div class="team-cell"><img src="{url_escudo}" class="team-logo" /><span style="color: #110888 !important; font-weight: 800 !important; white-space: nowrap;">{nome_clean}</span></div>'
+    return f'<span style="color: #110888 !important; font-weight: 800 !important; white-space: nowrap;">{nome_clean}</span>'
 
 def formatar_tabela_classificacao_oficial(df, mapa_escudos, reatribuir_posicao=False):
     if df.empty:
@@ -709,7 +717,7 @@ if opcao == "Início":
     with c1:
         st.markdown(f"""
             <div class="metric-card">
-                <div class="metric-value" style="font-size:18px; padding-top:6px;">
+                <div class="metric-value" style="font-size:16px; padding-top:6px;">
                     {formatar_equipe_com_escudo("Colégio Santa Maria", mapa_escudos)}
                 </div>
                 <div class="metric-label">NOME DA EQUIPE</div>
@@ -757,20 +765,20 @@ if opcao == "Início":
             
             st.markdown(f"""
                 <div class="match-box">
-                    <div style="font-size:13px; color:#475569; margin-bottom:12px; font-weight:600;">
+                    <div style="font-size:12px; color:#475569; margin-bottom:10px; font-weight:600;">
                         📅 <b>Data:</b> {prox['Data']} às {prox['Horário']} &nbsp;|&nbsp; 📍 <b>Local:</b> {prox['Local']} &nbsp;|&nbsp; 🏷️ <b>Jogo #{prox['Nº Jogo']}</b>
                     </div>
-                    <div style="display:flex; justify-content:space-around; align-items:center; text-align:center;">
-                        <div style="flex:1;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; text-align:center; gap: 4px;">
+                        <div style="flex:1; min-width:0; overflow:hidden;">
                             <div class="team-name">{mandante_formatted}</div>
-                            <div style="font-size:11px; color:#94a3b8; font-weight:700; margin-top:2px;">MANDANTE</div>
+                            <div style="font-size:10px; color:#94a3b8; font-weight:700; margin-top:2px;">MANDANTE</div>
                         </div>
-                        <div style="padding: 0 20px;">
+                        <div style="padding: 0 8px; flex-shrink:0;">
                             <span class="score-badge">X</span>
                         </div>
-                        <div style="flex:1;">
+                        <div style="flex:1; min-width:0; overflow:hidden;">
                             <div class="team-name">{visitante_formatted}</div>
-                            <div style="font-size:11px; color:#94a3b8; font-weight:700; margin-top:2px;">VISITANTE</div>
+                            <div style="font-size:10px; color:#94a3b8; font-weight:700; margin-top:2px;">VISITANTE</div>
                         </div>
                     </div>
                 </div>
@@ -800,20 +808,20 @@ if opcao == "Início":
 
             st.markdown(f"""
                 <div class="match-box">
-                    <div style="font-size:13px; color:#475569; margin-bottom:12px; font-weight:600;">
+                    <div style="font-size:12px; color:#475569; margin-bottom:10px; font-weight:600;">
                         📅 <b>Data:</b> {ult_sm['Data']} às {ult_sm['Horário']} &nbsp;|&nbsp; 📍 <b>Local:</b> {ult_sm['Local']} &nbsp;|&nbsp; 🏷️ <b>Jogo #{ult_sm['Nº Jogo']}</b> &nbsp; {tag_status}
                     </div>
-                    <div style="display:flex; justify-content:space-around; align-items:center; text-align:center;">
-                        <div style="flex:1;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; text-align:center; gap: 4px;">
+                        <div style="flex:1; min-width:0; overflow:hidden;">
                             <div class="team-name">{mandante_sm}</div>
-                            <div style="font-size:11px; color:#94a3b8; font-weight:700; margin-top:2px;">MANDANTE</div>
+                            <div style="font-size:10px; color:#94a3b8; font-weight:700; margin-top:2px;">MANDANTE</div>
                         </div>
-                        <div style="padding: 0 20px;">
+                        <div style="padding: 0 8px; flex-shrink:0;">
                             <span class="score-badge">{ult_sm['Placar']}</span>
                         </div>
-                        <div style="flex:1;">
+                        <div style="flex:1; min-width:0; overflow:hidden;">
                             <div class="team-name">{visitante_sm}</div>
-                            <div style="font-size:11px; color:#94a3b8; font-weight:700; margin-top:2px;">VISITANTE</div>
+                            <div style="font-size:10px; color:#94a3b8; font-weight:700; margin-top:2px;">VISITANTE</div>
                         </div>
                     </div>
                 </div>
