@@ -468,42 +468,71 @@ def obter_todas_tabelas_classificacao():
 
     return df_geral, df_grupo_a, df_grupo_b
 
+def padronizar_colunas_tabela(df):
+    df = limpar_colunas_df(df)
+    novas_cols = []
+    for i, c in enumerate(df.columns):
+        c_lower = str(c).lower().strip()
+        if i == 0 or 'classifica' in c_lower or c_lower == '':
+            novas_cols.append('Pos')
+        elif i == 1 or 'equipe' in c_lower or 'clube' in c_lower or 'time' in c_lower:
+            novas_cols.append('Equipe')
+        elif c_lower in ['p', 'pts', 'pontos']:
+            novas_cols.append('P')
+        elif c_lower in ['j', 'jogos']:
+            novas_cols.append('J')
+        elif c_lower in ['v', 'vit', 'vitorias', 'vitórias']:
+            novas_cols.append('V')
+        elif c_lower in ['e', 'empates']:
+            novas_cols.append('E')
+        elif c_lower in ['d', 'derrotas']:
+            novas_cols.append('D')
+        elif c_lower in ['gp', 'gols pró', 'gols pro']:
+            novas_cols.append('GP')
+        elif c_lower in ['gc', 'gols contra']:
+            novas_cols.append('GC')
+        elif c_lower in ['sg', 'saldo']:
+            novas_cols.append('SG')
+        elif c_lower in ['avg']:
+            novas_cols.append('Avg')
+        elif c_lower in ['%a', 'aproveitamento']:
+            novas_cols.append('%A')
+        else:
+            novas_cols.append(f'Col_{i}')
+    df.columns = novas_cols
+    return df
+
 def obter_classificacao_geral_unificada(df_ga, df_gb):
     dfs = []
     for d in [df_ga, df_gb]:
         if not d.empty:
-            dfs.append(limpar_colunas_df(d))
+            df_padrao = padronizar_colunas_tabela(d)
+            dfs.append(df_padrao)
     if not dfs:
         return pd.DataFrame()
     
     df_combinado = pd.concat(dfs, ignore_index=True)
     
     try:
-        col_p, col_v, col_sg, col_gp = None, None, None, None
-        cols_lower = [str(c).lower() for c in df_combinado.columns]
-        for idx, c in enumerate(cols_lower):
-            if c in ['p', 'pts', 'pontos']:
-                col_p = df_combinado.columns[idx]
-            elif c in ['v', 'vit', 'vitórias', 'vitorias']:
-                col_v = df_combinado.columns[idx]
-            elif c in ['sg', 'saldo']:
-                col_sg = df_combinado.columns[idx]
-            elif c in ['gp', 'gols pró', 'gols pro']:
-                col_gp = df_combinado.columns[idx]
-        
-        if not col_p and len(df_combinado.columns) > 2:
-            col_p = df_combinado.columns[2]
-        if not col_v and len(df_combinado.columns) > 4:
-            col_v = df_combinado.columns[4]
-        if not col_sg and len(df_combinado.columns) > 9:
-            col_sg = df_combinado.columns[9]
-        elif not col_sg and len(df_combinado.columns) > 8:
-            col_sg = df_combinado.columns[8]
+        if 'P' in df_combinado.columns:
+            df_combinado['__p_num'] = pd.to_numeric(df_combinado['P'].astype(str).str.replace(r'[^0-9-]', '', regex=True), errors='coerce').fillna(0)
+        else:
+            df_combinado['__p_num'] = 0
 
-        df_combinado['__p_num'] = pd.to_numeric(df_combinado[col_p].astype(str).str.replace(r'[^0-9-]', '', regex=True), errors='coerce').fillna(0) if col_p else 0
-        df_combinado['__v_num'] = pd.to_numeric(df_combinado[col_v].astype(str).str.replace(r'[^0-9-]', '', regex=True), errors='coerce').fillna(0) if col_v else 0
-        df_combinado['__sg_num'] = pd.to_numeric(df_combinado[col_sg].astype(str).str.replace(r'[^0-9-]', '', regex=True), errors='coerce').fillna(0) if col_sg else 0
-        df_combinado['__gp_num'] = pd.to_numeric(df_combinado[col_gp].astype(str).str.replace(r'[^0-9-]', '', regex=True), errors='coerce').fillna(0) if col_gp else 0
+        if 'V' in df_combinado.columns:
+            df_combinado['__v_num'] = pd.to_numeric(df_combinado['V'].astype(str).str.replace(r'[^0-9-]', '', regex=True), errors='coerce').fillna(0)
+        else:
+            df_combinado['__v_num'] = 0
+
+        if 'SG' in df_combinado.columns:
+            df_combinado['__sg_num'] = pd.to_numeric(df_combinado['SG'].astype(str).str.replace(r'[^0-9-]', '', regex=True), errors='coerce').fillna(0)
+        else:
+            df_combinado['__sg_num'] = 0
+
+        if 'GP' in df_combinado.columns:
+            df_combinado['__gp_num'] = pd.to_numeric(df_combinado['GP'].astype(str).str.replace(r'[^0-9-]', '', regex=True), errors='coerce').fillna(0)
+        else:
+            df_combinado['__gp_num'] = 0
 
         df_combinado = df_combinado.sort_values(
             by=['__p_num', '__v_num', '__sg_num', '__gp_num'],
