@@ -299,7 +299,7 @@ st.markdown(
 # -----------------------------------------------------------------------------
 URL_CATEGORIA = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/categoria/sub-13-masculino/19978"
 URL_ARTILHARIA = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/categoria/sub-13-masculino/19978/estatisticas/artilharia"
-URL_CARTOES = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/estatisticas/cartoes"
+URL_CARTOES = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/categoria/sub-13-masculino/19978/estatisticas/cartoes"
 URL_SUSPENSOES = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/categoria/sub-13-masculino/19978/estatisticas/suspensoes"
 URL_JOGOS = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/impressao/categoria/19978/0"
 URL_CLASSIFICACAO_GERAL = f"{URL_CATEGORIA}/classificacao/geral/0"
