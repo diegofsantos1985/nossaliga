@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Estilização CSS customizada (Otimizada para eliminar sombras e forçar fundos azuis sólidos)
+# Estilização CSS customizada (Otimizada para eliminar sombras e padronizar fundos azuis)
 st.markdown(
     """
     <style>
@@ -53,7 +53,7 @@ st.markdown(
     .header-title { font-size: 28px; font-weight: 800; margin: 0; color: #ffffff !important; }
     .header-subtitle { font-size: 14px; color: #f8f063; margin-top: 4px; font-weight: 600; }
     
-    /* CAIXA DE TÍTULO DE SEÇÃO COM FUNDO AZUL SÓLIDO (PADRÃO SOLICITADO) */
+    /* CAIXA DE TÍTULO DE SEÇÃO COM FUNDO AZUL SÓLIDO */
     .section-header-box {
         background-color: #110888 !important;
         color: #ffffff !important;
@@ -143,7 +143,7 @@ st.markdown(
         font-size: 11px;
     }
 
-    /* ESTILIZAÇÃO GLOBAL DAS ABAS (ST.TABS) */
+    /* ESTILIZAÇÃO GLOBAL DAS ABAS (ST.TABS) COM FUNDO AZUL SÓLIDO */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
         background-color: transparent;
@@ -156,16 +156,18 @@ st.markdown(
         background-color: #110888 !important;
         color: #ffffff !important;
         border-radius: 8px !important;
-        padding: 10px 16px !important;
-        font-weight: 700 !important;
-        font-size: 12px !important;
+        padding: 12px 20px !important;
+        font-weight: 800 !important;
+        font-size: 13px !important;
         border: none !important;
         height: auto !important;
         white-space: nowrap !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
     }
 
     .stTabs [data-baseweb="tab"] * {
         color: #ffffff !important;
+        text-shadow: none !important;
     }
 
     .stTabs [data-baseweb="tab"]:hover {
