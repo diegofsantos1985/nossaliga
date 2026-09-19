@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Estilização CSS customizada (Fundo bege claro e abas com texto preto no mobile)
+# Estilização CSS customizada (Fundo cinza grafite e abas com texto preto no mobile)
 st.markdown(
     """
     <style>
@@ -34,8 +34,8 @@ st.markdown(
         max-width: 280px !important;
     }
 
-    /* FUNDO DA PÁGINA EM TOM BEGE CLARO */
-    .stApp { background-color: #F4F1EA !important; }
+    /* FUNDO DA PÁGINA EM CINZA GRAFITE */
+    .stApp { background-color: #2b2b2b !important; }
     
     /* ELIMINAÇÃO TOTAL DE SOMBRAS E FANTASMAS NAS FONTES */
     * {
@@ -96,7 +96,7 @@ st.markdown(
     .match-header {
         font-size: 12px;
         font-weight: 800;
-        color: #110888;
+        color: #f8f063;
         text-transform: uppercase;
         letter-spacing: 0.5px;
         margin-bottom: 15px;
@@ -201,7 +201,7 @@ st.markdown(
     div[data-testid="stSelectbox"] label {
         font-size: 12px !important;
         font-weight: 800 !important;
-        color: #110888 !important;
+        color: #ffffff !important;
         text-transform: uppercase !important;
         letter-spacing: 0.5px !important;
         margin-bottom: 4px !important;
@@ -808,7 +808,7 @@ if opcao == "Início":
                 ultima_data = df_realizados_geral.iloc[-1]['Data']
                 df_ultima_rodada = df_realizados_geral[df_realizados_geral['Data'] == ultima_data].copy()
                 
-                st.markdown(f"<div style='font-size: 13px; color: #110888; font-weight: 700; margin-bottom: 12px;'>📅 Data da Rodada: {ultima_data}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='font-size: 13px; color: #f8f063; font-weight: 700; margin-bottom: 12px;'>📅 Data da Rodada: {ultima_data}</div>", unsafe_allow_html=True)
                 
                 for _, ult in df_ultima_rodada.iterrows():
                     m_fmt = formatar_equipe_com_escudo(ult['Mandante'], mapa_escudos)
@@ -844,7 +844,7 @@ elif opcao == "Classificação Sub-13":
     with tab_grupos:
         col_g1, col_g2 = st.columns(2, gap="medium")
         with col_g1:
-            st.markdown("<h3 style='color: #110888;'>🅰️ Grupo A</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='color: #ffffff;'>🅰️ Grupo A</h3>", unsafe_allow_html=True)
             if not df_ga_raw.empty:
                 df_ga_fmt = formatar_tabela_classificacao_oficial(df_ga_raw, mapa_escudos)
                 renderizar_tabela_html(df_ga_fmt)
@@ -852,7 +852,7 @@ elif opcao == "Classificação Sub-13":
                 st.info("Dados do Grupo A indisponíveis no momento.")
                 
         with col_g2:
-            st.markdown("<h3 style='color: #110888;'>🅱️ Grupo B</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='color: #ffffff;'>🅱️ Grupo B</h3>", unsafe_allow_html=True)
             if not df_gb_raw.empty:
                 df_gb_fmt = formatar_tabela_classificacao_oficial(df_gb_raw, mapa_escudos)
                 renderizar_tabela_html(df_gb_fmt)
@@ -884,14 +884,14 @@ elif opcao == "Jogos":
         df_proximos = df_jogos_filtrados[~is_realizado].copy()
         
         with tab_anteriores:
-            st.markdown("<h3 style='color: #110888;'>⏪ Jogos Anteriores (Com Resultado)</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='color: #ffffff;'>⏪ Jogos Anteriores (Com Resultado)</h3>", unsafe_allow_html=True)
             if not df_anteriores.empty:
                 renderizar_tabela_html(df_anteriores)
             else:
                 st.info("Nenhum jogo anterior encontrado para a seleção.")
                 
         with tab_proximos:
-            st.markdown("<h3 style='color: #110888;'>⏩ Próximos Jogos (A Realizar)</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='color: #ffffff;'>⏩ Próximos Jogos (A Realizar)</h3>", unsafe_allow_html=True)
             if not df_proximos.empty:
                 renderizar_tabela_html(df_proximos)
             else:
@@ -1003,14 +1003,14 @@ elif opcao == "Cartões Amarelos e Vermelhos":
         tab_amarelos, tab_vermelhos = st.tabs(["🟨 Cartões Amarelos", "🟥 Cartões Vermelhos"])
 
         with tab_amarelos:
-            st.markdown("<h3 style='color: #110888;'>Cartões Amarelos</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='color: #ffffff;'>Cartões Amarelos</h3>", unsafe_allow_html=True)
             if not df_amarelos.empty:
                 renderizar_tabela_html(df_amarelos)
             else:
                 st.info("Nenhum registro de cartão amarelo para esta seleção.")
 
         with tab_vermelhos:
-            st.markdown("<h3 style='color: #110888;'>Cartões Vermelhos</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='color: #ffffff;'>Cartões Vermelhos</h3>", unsafe_allow_html=True)
             if not df_vermelhos.empty:
                 renderizar_tabela_html(df_vermelhos)
             else:
@@ -1054,7 +1054,7 @@ elif opcao == "Suspensão":
             ])
 
             with tab_atletas:
-                st.markdown("<h3 style='color: #110888;'>Penalização de Atletas</h3>", unsafe_allow_html=True)
+                st.markdown("<h3 style='color: #ffffff;'>Penalização de Atletas</h3>", unsafe_allow_html=True)
                 if "Atleta" in df_bruto.columns:
                     df_atl = df_bruto[
                         df_bruto["Atleta"].notna() & 
@@ -1073,7 +1073,7 @@ elif opcao == "Suspensão":
                     st.info("Nenhuma penalização de atleta encontrada.")
 
             with tab_comissao:
-                st.markdown("<h3 style='color: #110888;'>Penalização de Comissão Técnica</h3>", unsafe_allow_html=True)
+                st.markdown("<h3 style='color: #ffffff;'>Penalização de Comissão Técnica</h3>", unsafe_allow_html=True)
                 
                 cols_brutas = list(df_bruto.columns)
                 col_eq_comissao = None
@@ -1119,7 +1119,7 @@ elif opcao == "Suspensão":
                     st.info("Nenhuma penalização de comissão técnica encontrada.")
 
             with tab_equipes:
-                st.markdown("<h3 style='color: #110888;'>Penalização de Equipes</h3>", unsafe_allow_html=True)
+                st.markdown("<h3 style='color: #ffffff;'>Penalização de Equipes</h3>", unsafe_allow_html=True)
                 df_eq = df_bruto.copy()
                 
                 if "Atleta" in df_eq.columns:
