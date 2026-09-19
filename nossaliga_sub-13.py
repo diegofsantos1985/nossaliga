@@ -302,6 +302,7 @@ URL_ARTILHARIA = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-
 URL_CARTOES = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/estatisticas/cartoes"
 URL_SUSPENSOES = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/categoria/sub-13-masculino/19978/estatisticas/suspensoes"
 URL_JOGOS = "https://www.nossaliga.com.br/futsal/nossa-liga-futsal-2026/16-edicao-edicao-ano-2026/5361/impressao/categoria/19978/0"
+URL_CLASSIFICACAO_GERAL = f"{URL_CATEGORIA}/classificacao/geral/0"
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
@@ -382,7 +383,7 @@ def limpar_colunas_df(df):
 def obter_links_classificacao_dinamicos():
     soup = carregar_dados_url(URL_CATEGORIA)
     links = {
-        "geral": f"{URL_CATEGORIA}/classificacao/geral/0",
+        "geral": URL_CLASSIFICACAO_GERAL,
         "grupo_a": f"{URL_CATEGORIA}/classificacao/grupo-a/0",
         "grupo_b": f"{URL_CATEGORIA}/classificacao/grupo-b/0"
     }
@@ -411,37 +412,44 @@ def filtrar_tabela_valida(df):
     return True
 
 @st.cache_data(ttl=300)
+def obter_classificacao_geral_oficial():
+    soup_geral = carregar_dados_url(URL_CLASSIFICACAO_GERAL)
+    if soup_geral:
+        dfs = extrair_tabelas_soup(soup_geral)
+        for d in dfs:
+            d_limpo = limpar_colunas_df(d)
+            if filtrar_tabela_valida(d_limpo):
+                return d_limpo
+    return pd.DataFrame()
+
+@st.cache_data(ttl=300)
 def obter_todas_tabelas_classificacao():
+    df_geral = obter_classificacao_geral_oficial()
     soup_cat = carregar_dados_url(URL_CATEGORIA)
-    df_geral = pd.DataFrame()
     df_grupo_a = pd.DataFrame()
     df_grupo_b = pd.DataFrame()
     
     if soup_cat:
-        for tag in soup_cat.find_all(["h2", "h3", "h4", "div", "span"], string=re.compile(r"geral|grupo\s*a|grupo\s*b", re.IGNORECASE)):
+        for tag in soup_cat.find_all(["h2", "h3", "h4", "div", "span"], string=re.compile(r"grupo\s*a|grupo\s*b", re.IGNORECASE)):
             texto_tag = tag.get_text(strip=True).lower()
             tabela = tag.find_next("table")
             if tabela:
                 df = extrair_tabela_unica(tabela)
                 df_limpo = limpar_colunas_df(df)
                 if filtrar_tabela_valida(df_limpo):
-                    if "geral" in texto_tag and df_geral.empty:
-                        df_geral = df_limpo
-                    elif "grupo a" in texto_tag and df_grupo_a.empty:
+                    if "grupo a" in texto_tag and df_grupo_a.empty:
                         df_grupo_a = df_limpo
                     elif "grupo b" in texto_tag and df_grupo_b.empty:
                         df_grupo_b = df_limpo
 
-    if df_geral.empty or df_grupo_a.empty or df_grupo_b.empty:
+    if df_grupo_a.empty or df_grupo_b.empty:
         dfs_cat = extrair_tabelas_soup(soup_cat) if soup_cat else []
         tabelas_validas = [limpar_colunas_df(d) for d in dfs_cat if filtrar_tabela_valida(limpar_colunas_df(d))]
         
-        if df_geral.empty and len(tabelas_validas) > 0:
-            df_geral = tabelas_validas[0]
-        if df_grupo_a.empty and len(tabelas_validas) > 1:
-            df_grupo_a = tabelas_validas[1]
-        if df_grupo_b.empty and len(tabelas_validas) > 2:
-            for t in tabelas_validas[2:]:
+        if df_grupo_a.empty and len(tabelas_validas) > 0:
+            df_grupo_a = tabelas_validas[0]
+        if df_grupo_b.empty and len(tabelas_validas) > 1:
+            for t in tabelas_validas[1:]:
                 if not t.equals(df_grupo_a):
                     df_grupo_b = t
                     break
@@ -468,87 +476,9 @@ def obter_todas_tabelas_classificacao():
 
     return df_geral, df_grupo_a, df_grupo_b
 
-def padronizar_colunas_tabela(df):
-    df = limpar_colunas_df(df)
-    novas_cols = []
-    for i, c in enumerate(df.columns):
-        c_lower = str(c).lower().strip()
-        if i == 0 or 'classifica' in c_lower or c_lower == '':
-            novas_cols.append('Pos')
-        elif i == 1 or 'equipe' in c_lower or 'clube' in c_lower or 'time' in c_lower:
-            novas_cols.append('Equipe')
-        elif c_lower in ['p', 'pts', 'pontos']:
-            novas_cols.append('P')
-        elif c_lower in ['j', 'jogos']:
-            novas_cols.append('J')
-        elif c_lower in ['v', 'vit', 'vitorias', 'vitórias']:
-            novas_cols.append('V')
-        elif c_lower in ['e', 'empates']:
-            novas_cols.append('E')
-        elif c_lower in ['d', 'derrotas']:
-            novas_cols.append('D')
-        elif c_lower in ['gp', 'gols pró', 'gols pro']:
-            novas_cols.append('GP')
-        elif c_lower in ['gc', 'gols contra']:
-            novas_cols.append('GC')
-        elif c_lower in ['sg', 'saldo']:
-            novas_cols.append('SG')
-        elif c_lower in ['avg']:
-            novas_cols.append('Avg')
-        elif c_lower in ['%a', 'aproveitamento']:
-            novas_cols.append('%A')
-        else:
-            novas_cols.append(f'Col_{i}')
-    df.columns = novas_cols
-    return df
-
-def obter_classificacao_geral_unificada(df_ga, df_gb):
-    dfs = []
-    for d in [df_ga, df_gb]:
-        if not d.empty:
-            df_padrao = padronizar_colunas_tabela(d)
-            dfs.append(df_padrao)
-    if not dfs:
-        return pd.DataFrame()
-    
-    df_combinado = pd.concat(dfs, ignore_index=True)
-    
-    try:
-        if 'P' in df_combinado.columns:
-            df_combinado['__p_num'] = pd.to_numeric(df_combinado['P'].astype(str).str.replace(r'[^0-9-]', '', regex=True), errors='coerce').fillna(0)
-        else:
-            df_combinado['__p_num'] = 0
-
-        if 'V' in df_combinado.columns:
-            df_combinado['__v_num'] = pd.to_numeric(df_combinado['V'].astype(str).str.replace(r'[^0-9-]', '', regex=True), errors='coerce').fillna(0)
-        else:
-            df_combinado['__v_num'] = 0
-
-        if 'SG' in df_combinado.columns:
-            df_combinado['__sg_num'] = pd.to_numeric(df_combinado['SG'].astype(str).str.replace(r'[^0-9-]', '', regex=True), errors='coerce').fillna(0)
-        else:
-            df_combinado['__sg_num'] = 0
-
-        if 'GP' in df_combinado.columns:
-            df_combinado['__gp_num'] = pd.to_numeric(df_combinado['GP'].astype(str).str.replace(r'[^0-9-]', '', regex=True), errors='coerce').fillna(0)
-        else:
-            df_combinado['__gp_num'] = 0
-
-        df_combinado = df_combinado.sort_values(
-            by=['__p_num', '__v_num', '__sg_num', '__gp_num'],
-            ascending=[False, False, False, False]
-        ).reset_index(drop=True)
-
-        df_combinado = df_combinado.drop(columns=[c for c in ['__p_num', '__v_num', '__sg_num', '__gp_num'] if c in df_combinado.columns])
-    except Exception:
-        pass
-
-    return df_combinado
-
 @st.cache_data(ttl=300)
 def obter_mapeamento_escudos():
-    links = obter_links_classificacao_dinamicos()
-    soup = carregar_dados_url(links["geral"])
+    soup = carregar_dados_url(URL_CLASSIFICACAO_GERAL)
     mapa = {}
     if soup:
         imgs = soup.find_all("img")
@@ -664,15 +594,16 @@ def obter_posicoes_santa_maria():
     pos_grupo = "N/I"
     
     df_geral, df_ga, df_gb = obter_todas_tabelas_classificacao()
-    df_geral_unif = obter_classificacao_geral_unificada(df_ga, df_gb)
         
-    if not df_geral_unif.empty:
-        col_eq = [c for c in df_geral_unif.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
-        target_col = col_eq[0] if col_eq else df_geral_unif.columns[1] if len(df_geral_unif.columns) > 1 else df_geral_unif.columns[0]
+    if not df_geral.empty:
+        col_eq = [c for c in df_geral.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
+        target_col = col_eq[0] if col_eq else df_geral.columns[1] if len(df_geral.columns) > 1 else df_geral.columns[0]
         
-        for idx, row in df_geral_unif.iterrows():
+        for idx, row in df_geral.iterrows():
             if "santa maria" in str(row[target_col]).lower():
-                pos_geral = f"{idx + 1}º"
+                col_pos = df_geral.columns[0]
+                val_pos = re.sub(r'[ºª°]', '', str(row[col_pos])).strip()
+                pos_geral = f"{val_pos}º" if val_pos.isdigit() else f"{row[col_pos]}º"
                 break
 
     for df_g_grupo in [df_ga, df_gb]:
@@ -923,19 +854,15 @@ elif opcao == "Classificação Sub-13":
     renderizar_cabecalho_secao("📊 Classificação — Sub-13 Masculino")
     
     df_geral_raw, df_ga_raw, df_gb_raw = obter_todas_tabelas_classificacao()
-    df_geral_unif = obter_classificacao_geral_unificada(df_ga_raw, df_gb_raw)
     
     tab_geral, tab_grupos = st.tabs(["🌐 Classificação Geral", "🏆 Classificação por Grupos"])
     
     with tab_geral:
-        if not df_geral_unif.empty:
-            df_g_fmt = formatar_tabela_classificacao_oficial(df_geral_unif, mapa_escudos, reatribuir_posicao=True)
-            renderizar_tabela_html(df_g_fmt)
-        elif not df_geral_raw.empty:
+        if not df_geral_raw.empty:
             df_g_fmt = formatar_tabela_classificacao_oficial(df_geral_raw, mapa_escudos)
             renderizar_tabela_html(df_g_fmt)
         else:
-            st.warning("Não foi possível carregar a tabela de classificação geral.")
+            st.warning("Não foi possível carregar a tabela de classificação geral oficial.")
 
     with tab_grupos:
         col_g1, col_g2 = st.columns(2, gap="medium")
