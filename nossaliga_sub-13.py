@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Estilização CSS customizada (Fundo cinza grafite e abas com texto preto no mobile)
+# Estilização CSS customizada (Fundo cinza grafite, abas e menus visíveis no mobile)
 st.markdown(
     """
     <style>
@@ -144,7 +144,7 @@ st.markdown(
         font-size: 11px;
     }
 
-    /* CORREÇÃO DEFINITIVA DAS ABAS (ST.TABS) - TEXTO PRETO NAS ABAS INATIVAS */
+    /* CORREÇÃO DEFINITIVA DAS ABAS (ST.TABS) */
     div.stTabs [data-baseweb="tab-list"] {
         gap: 8px !important;
         background-color: transparent !important;
@@ -161,7 +161,6 @@ st.markdown(
         box-shadow: 0 2px 6px rgba(0,0,0,0.05) !important;
     }
 
-    /* Aba Inativa (Força cor preta absoluta em todos os elementos e estados mobile) */
     div.stTabs [data-baseweb="tab"][aria-selected="false"],
     div.stTabs [data-baseweb="tab"][aria-selected="false"] p, 
     div.stTabs [data-baseweb="tab"][aria-selected="false"] div, 
@@ -178,7 +177,6 @@ st.markdown(
         background-color: #f1f5f9 !important;
     }
 
-    /* Aba Ativa (Fundo azul escuro e texto branco) */
     div.stTabs [data-baseweb="tab"][aria-selected="true"] {
         background-color: #110888 !important;
         border: 2px solid #110888 !important;
@@ -225,6 +223,19 @@ st.markdown(
     div[data-testid="stSelectbox"] [data-baseweb="select"] * {
         color: #110888 !important;
         font-weight: 800 !important;
+    }
+
+    /* CORREÇÃO DO MENU DROPDOWN (LISTA DE OPÇÕES DO SELECTBOX NO MOBILE) */
+    div[data-baseweb="popover"], div[data-baseweb="menu"], ul[role="listbox"] {
+        background-color: #ffffff !important;
+    }
+    div[data-baseweb="popover"] div, div[data-baseweb="menu"] div, ul[role="listbox"] li, ul[role="listbox"] li span {
+        color: #110888 !important;
+        -webkit-text-fill-color: #110888 !important;
+        font-weight: 700 !important;
+    }
+    ul[role="listbox"] li:hover {
+        background-color: #f1f5f9 !important;
     }
 
     .btn-limpar-container {
