@@ -195,7 +195,7 @@ st.markdown(
         display: none !important;
     }
 
-    /* ESTILIZAÇÃO DOS FILTROS (ST.SELECTBOX) */
+    /* ESTILIZAÇÃO DOS FILTROS (ST.SELECTBOX) E CORREÇÃO DO TEXTO SELECIONADO */
     div[data-testid="stSelectbox"] label {
         font-size: 12px !important;
         font-weight: 800 !important;
@@ -220,8 +220,11 @@ st.markdown(
         fill: #110888 !important;
     }
 
-    div[data-testid="stSelectbox"] [data-baseweb="select"] * {
+    div[data-testid="stSelectbox"] [data-baseweb="select"] *,
+    div[data-testid="stSelectbox"] div[data-baseweb="select"] span,
+    div[data-testid="stSelectbox"] div[data-baseweb="select"] div {
         color: #110888 !important;
+        -webkit-text-fill-color: #110888 !important;
         font-weight: 800 !important;
     }
 
@@ -895,14 +898,14 @@ elif opcao == "Jogos":
         df_proximos = df_jogos_filtrados[~is_realizado].copy()
         
         with tab_anteriores:
-            st.markdown("<h3 style='color: #ffffff;'>⏪ Jogos Anteriores (Com Resultado)</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='color: #ffffff; font-size: 15px;'>⏪ Jogos Anteriores (Com Resultado)</h3>", unsafe_allow_html=True)
             if not df_anteriores.empty:
                 renderizar_tabela_html(df_anteriores)
             else:
                 st.info("Nenhum jogo anterior encontrado para a seleção.")
                 
         with tab_proximos:
-            st.markdown("<h3 style='color: #ffffff;'>⏩ Próximos Jogos (A Realizar)</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='color: #ffffff; font-size: 15px;'>⏩ Próximos Jogos (A Realizar)</h3>", unsafe_allow_html=True)
             if not df_proximos.empty:
                 renderizar_tabela_html(df_proximos)
             else:
