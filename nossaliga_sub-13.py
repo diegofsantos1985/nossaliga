@@ -1206,31 +1206,32 @@ elif opcao == "Atletas — Colégio Santa Maria (Sub-13)":
     botao_voltar_inicio("atletas_csm")
     renderizar_cabecalho_secao("🏃 Atletas — Colégio Santa Maria (Sub-13)")
     
-    atletas_csm = sorted([
-        "André Monte Figueiredo",
-        "Bruno Monteiro Loureiro Amorim Filho",
-        "Filipe Rodrigues de Araújo Filho",
-        "Francisco Ouriques Lacerda Vidal",
-        "Gabriel Modesto Pereira Minghini Quirino dos Santos",
-        "Guilherme Canto Motta Gomes",
-        "Guilherme Marroquim Braga de Morais",
-        "Heitor Marques Maciel Pinheiro",
-        "Henrique Carvalho Tenório Cavalcanti",
-        "Henrique Ponce Maranhão Miranda",
-        "João Antônio Wanderley Azevedo Saraiva",
-        "José Anacleto de Andrade do Nascimento Neto",
-        "José Carlos Pereira Santos Neto",
-        "Jose Matheus Locio Barbosa",
-        "Lucca Normande Peixoto",
-        "Miguel Freire de Araújo Pereira",
-        "Pedro Henrique Vaz Manso Braga",
-        "Théo Dall Agnol Albuquerque",
-        "Willyam Ponzi Neto"
-    ])
+    atletas_csm = [
+        ("André Monte Figueiredo", "25"),
+        ("Bruno Monteiro Loureiro Amorim Filho", "70"),
+        ("Filipe Rodrigues de Araújo Filho", "72"),
+        ("Francisco Ouriques Lacerda Vidal", "12"),
+        ("Gabriel Modesto Pereira Minghini Quirino dos Santos", "14"),
+        ("Guilherme Canto Motta Gomes", "32"),
+        ("Guilherme Marroquim Braga de Morais", "26"),
+        ("Heitor Marques Maciel Pinheiro", "10"),
+        ("Henrique Carvalho Tenório Cavalcanti", "Pendente"),
+        ("Henrique Ponce Maranhão Miranda", "87"),
+        ("João Antônio Wanderley Azevedo Saraiva", "Pendente"),
+        ("José Anacleto de Andrade do Nascimento Neto", "20"),
+        ("José Carlos Pereira Santos Neto", "63"),
+        ("Jose Matheus Locio Barbosa", "Pendente"),
+        ("Lucca Normande Peixoto", "35"),
+        ("Miguel Freire de Araújo Pereira", "Pendente"),
+        ("Pedro Henrique Vaz Manso Braga", "77"),
+        ("Théo Dall Agnol Albuquerque", "10"),
+        ("Willyam Ponzi Neto", "28")
+    ]
     
     df_atletas = pd.DataFrame({
         "Nº": [f"{i}º" for i in range(1, len(atletas_csm) + 1)],
-        "Nome do Atleta": atletas_csm
+        "Nº da Camisa": [item[1] for item in atletas_csm],
+        "Nome do Atleta": [item[0] for item in atletas_csm]
     })
     
     renderizar_tabela_html(df_atletas)
