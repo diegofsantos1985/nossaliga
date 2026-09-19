@@ -468,6 +468,54 @@ def obter_todas_tabelas_classificacao():
 
     return df_geral, df_grupo_a, df_grupo_b
 
+def obter_classificacao_geral_unificada(df_ga, df_gb):
+    dfs = []
+    for d in [df_ga, df_gb]:
+        if not d.empty:
+            dfs.append(limpar_colunas_df(d))
+    if not dfs:
+        return pd.DataFrame()
+    
+    df_combinado = pd.concat(dfs, ignore_index=True)
+    
+    try:
+        col_p, col_v, col_sg, col_gp = None, None, None, None
+        cols_lower = [str(c).lower() for c in df_combinado.columns]
+        for idx, c in enumerate(cols_lower):
+            if c in ['p', 'pts', 'pontos']:
+                col_p = df_combinado.columns[idx]
+            elif c in ['v', 'vit', 'vitórias', 'vitorias']:
+                col_v = df_combinado.columns[idx]
+            elif c in ['sg', 'saldo']:
+                col_sg = df_combinado.columns[idx]
+            elif c in ['gp', 'gols pró', 'gols pro']:
+                col_gp = df_combinado.columns[idx]
+        
+        if not col_p and len(df_combinado.columns) > 2:
+            col_p = df_combinado.columns[2]
+        if not col_v and len(df_combinado.columns) > 4:
+            col_v = df_combinado.columns[4]
+        if not col_sg and len(df_combinado.columns) > 9:
+            col_sg = df_combinado.columns[9]
+        elif not col_sg and len(df_combinado.columns) > 8:
+            col_sg = df_combinado.columns[8]
+
+        df_combinado['__p_num'] = pd.to_numeric(df_combinado[col_p].astype(str).str.replace(r'[^0-9-]', '', regex=True), errors='coerce').fillna(0) if col_p else 0
+        df_combinado['__v_num'] = pd.to_numeric(df_combinado[col_v].astype(str).str.replace(r'[^0-9-]', '', regex=True), errors='coerce').fillna(0) if col_v else 0
+        df_combinado['__sg_num'] = pd.to_numeric(df_combinado[col_sg].astype(str).str.replace(r'[^0-9-]', '', regex=True), errors='coerce').fillna(0) if col_sg else 0
+        df_combinado['__gp_num'] = pd.to_numeric(df_combinado[col_gp].astype(str).str.replace(r'[^0-9-]', '', regex=True), errors='coerce').fillna(0) if col_gp else 0
+
+        df_combinado = df_combinado.sort_values(
+            by=['__p_num', '__v_num', '__sg_num', '__gp_num'],
+            ascending=[False, False, False, False]
+        ).reset_index(drop=True)
+
+        df_combinado = df_combinado.drop(columns=[c for c in ['__p_num', '__v_num', '__sg_num', '__gp_num'] if c in df_combinado.columns])
+    except Exception:
+        pass
+
+    return df_combinado
+
 @st.cache_data(ttl=300)
 def obter_mapeamento_escudos():
     links = obter_links_classificacao_dinamicos()
@@ -501,7 +549,7 @@ def formatar_equipe_com_escudo(nome_equipe, mapa_escudos):
         return f'<div class="team-cell"><img src="{url_escudo}" class="team-logo" /><span style="color: #110888 !important; font-weight: 800 !important;">{nome_clean}</span></div>'
     return f'<span style="color: #110888 !important; font-weight: 800 !important;">{nome_clean}</span>'
 
-def formatar_tabela_classificacao_oficial(df, mapa_escudos):
+def formatar_tabela_classificacao_oficial(df, mapa_escudos, reatribuir_posicao=False):
     if df.empty:
         return df
     
@@ -510,9 +558,12 @@ def formatar_tabela_classificacao_oficial(df, mapa_escudos):
     
     for idx, row in df.iterrows():
         if len(row) >= 2:
-            pos = str(row.iloc[0]).strip()
-            pos_clean = re.sub(r'[ºª°]', '', pos).strip()
-            pos_str = f"{pos_clean}º" if pos_clean.isdigit() else pos
+            if reatribuir_posicao:
+                pos_str = f"{idx + 1}º"
+            else:
+                pos = str(row.iloc[0]).strip()
+                pos_clean = re.sub(r'[ºª°]', '', pos).strip()
+                pos_str = f"{pos_clean}º" if pos_clean.isdigit() else pos
 
             nome_equipe = str(row.iloc[1]).strip()
             if not nome_equipe or nome_equipe.lower() in ["none", "nan"] or nome_equipe.isdigit():
@@ -584,17 +635,15 @@ def obter_posicoes_santa_maria():
     pos_grupo = "N/I"
     
     df_geral, df_ga, df_gb = obter_todas_tabelas_classificacao()
+    df_geral_unif = obter_classificacao_geral_unificada(df_ga, df_gb)
         
-    if not df_geral.empty:
-        df_g_limpo = limpar_colunas_df(df_geral)
-        col_eq = [c for c in df_g_limpo.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
-        target_col = col_eq[0] if col_eq else df_g_limpo.columns[1] if len(df_g_limpo.columns) > 1 else df_g_limpo.columns[0]
+    if not df_geral_unif.empty:
+        col_eq = [c for c in df_geral_unif.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
+        target_col = col_eq[0] if col_eq else df_geral_unif.columns[1] if len(df_geral_unif.columns) > 1 else df_geral_unif.columns[0]
         
-        for idx, row in df_g_limpo.iterrows():
+        for idx, row in df_geral_unif.iterrows():
             if "santa maria" in str(row[target_col]).lower():
-                col_pos = df_g_limpo.columns[0]
-                val_pos = re.sub(r'[ºª°]', '', str(row[col_pos])).strip()
-                pos_geral = f"{val_pos}º" if val_pos.isdigit() else f"{row[col_pos]}º"
+                pos_geral = f"{idx + 1}º"
                 break
 
     for df_g_grupo in [df_ga, df_gb]:
@@ -845,11 +894,15 @@ elif opcao == "Classificação Sub-13":
     renderizar_cabecalho_secao("📊 Classificação — Sub-13 Masculino")
     
     df_geral_raw, df_ga_raw, df_gb_raw = obter_todas_tabelas_classificacao()
+    df_geral_unif = obter_classificacao_geral_unificada(df_ga_raw, df_gb_raw)
     
     tab_geral, tab_grupos = st.tabs(["🌐 Classificação Geral", "🏆 Classificação por Grupos"])
     
     with tab_geral:
-        if not df_geral_raw.empty:
+        if not df_geral_unif.empty:
+            df_g_fmt = formatar_tabela_classificacao_oficial(df_geral_unif, mapa_escudos, reatribuir_posicao=True)
+            renderizar_tabela_html(df_g_fmt)
+        elif not df_geral_raw.empty:
             df_g_fmt = formatar_tabela_classificacao_oficial(df_geral_raw, mapa_escudos)
             renderizar_tabela_html(df_g_fmt)
         else:
