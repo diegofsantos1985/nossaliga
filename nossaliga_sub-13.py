@@ -88,7 +88,7 @@ st.markdown(
     .match-box {
         background: #ffffff;
         border-radius: 12px;
-        padding: 16px;
+        padding: 12px 10px;
         border: 1px solid #cbd5e1;
         box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         margin-bottom: 20px;
@@ -102,50 +102,56 @@ st.markdown(
         margin-bottom: 12px;
     }
     .team-name { 
-        font-size: 14px; 
+        font-size: 11.5px; 
         font-weight: 800; 
         color: #0f172a; 
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 6px;
+        gap: 4px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: 100%;
     }
+    .team-logo {
+        width: 15px;
+        height: 15px;
+        object-fit: contain;
+        flex-shrink: 0;
+    }
     .score-badge {
-        font-size: 18px;
+        font-size: 15px;
         font-weight: 800;
         color: #160e91;
         background: #f1f5f9;
-        padding: 6px 12px;
-        border-radius: 8px;
+        padding: 4px 8px;
+        border-radius: 6px;
         display: inline-block;
     }
     .status-vitoria {
         background-color: #22c55e;
         color: white;
-        padding: 2px 8px;
+        padding: 2px 6px;
         border-radius: 4px;
         font-weight: 800;
-        font-size: 11px;
+        font-size: 10px;
     }
     .status-derrota {
         background-color: #ef4444;
         color: white;
-        padding: 2px 8px;
+        padding: 2px 6px;
         border-radius: 4px;
         font-weight: 800;
-        font-size: 11px;
+        font-size: 10px;
     }
     .status-empate {
         background-color: #64748b;
         color: white;
-        padding: 2px 8px;
+        padding: 2px 6px;
         border-radius: 4px;
         font-weight: 800;
-        font-size: 11px;
+        font-size: 10px;
     }
 
     /* CORREÇÃO DEFINITIVA DAS ABAS (ST.TABS) */
@@ -284,18 +290,12 @@ st.markdown(
     .team-cell {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 4px;
         font-weight: 800;
         color: #110888 !important;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-    }
-    .team-logo {
-        width: 18px;
-        height: 18px;
-        object-fit: contain;
-        flex-shrink: 0;
     }
     </style>
 """,
@@ -540,8 +540,8 @@ def formatar_tabela_classificacao_oficial(df, mapa_escudos, reatribuir_posicao=F
             eq_fmt = formatar_equipe_com_escudo(nome_equipe, mapa_escudos)
 
             celula_classificacao = (
-                f'<div style="display: flex; align-items: center; gap: 8px;">'
-                f'<span style="font-weight: 800 !important; color: #110888 !important; min-width: 20px;">{pos_str}</span>'
+                f'<div style="display: flex; align-items: center; gap: 6px;">'
+                f'<span style="font-weight: 800 !important; color: #110888 !important; min-width: 18px;">{pos_str}</span>'
                 f'{eq_fmt}'
                 f'</div>'
             )
@@ -717,7 +717,7 @@ if opcao == "Início":
     with c1:
         st.markdown(f"""
             <div class="metric-card">
-                <div class="metric-value" style="font-size:16px; padding-top:6px;">
+                <div class="metric-value" style="font-size:15px; padding-top:6px;">
                     {formatar_equipe_com_escudo("Colégio Santa Maria", mapa_escudos)}
                 </div>
                 <div class="metric-label">NOME DA EQUIPE</div>
@@ -765,20 +765,20 @@ if opcao == "Início":
             
             st.markdown(f"""
                 <div class="match-box">
-                    <div style="font-size:12px; color:#475569; margin-bottom:10px; font-weight:600;">
+                    <div style="font-size:11.5px; color:#475569; margin-bottom:8px; font-weight:600;">
                         📅 <b>Data:</b> {prox['Data']} às {prox['Horário']} &nbsp;|&nbsp; 📍 <b>Local:</b> {prox['Local']} &nbsp;|&nbsp; 🏷️ <b>Jogo #{prox['Nº Jogo']}</b>
                     </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; text-align:center; gap: 4px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; text-align:center; gap: 2px;">
                         <div style="flex:1; min-width:0; overflow:hidden;">
                             <div class="team-name">{mandante_formatted}</div>
-                            <div style="font-size:10px; color:#94a3b8; font-weight:700; margin-top:2px;">MANDANTE</div>
+                            <div style="font-size:9.5px; color:#94a3b8; font-weight:700; margin-top:2px;">MANDANTE</div>
                         </div>
-                        <div style="padding: 0 8px; flex-shrink:0;">
+                        <div style="padding: 0 4px; flex-shrink:0;">
                             <span class="score-badge">X</span>
                         </div>
                         <div style="flex:1; min-width:0; overflow:hidden;">
                             <div class="team-name">{visitante_formatted}</div>
-                            <div style="font-size:10px; color:#94a3b8; font-weight:700; margin-top:2px;">VISITANTE</div>
+                            <div style="font-size:9.5px; color:#94a3b8; font-weight:700; margin-top:2px;">VISITANTE</div>
                         </div>
                     </div>
                 </div>
@@ -808,20 +808,20 @@ if opcao == "Início":
 
             st.markdown(f"""
                 <div class="match-box">
-                    <div style="font-size:12px; color:#475569; margin-bottom:10px; font-weight:600;">
+                    <div style="font-size:11.5px; color:#475569; margin-bottom:8px; font-weight:600;">
                         📅 <b>Data:</b> {ult_sm['Data']} às {ult_sm['Horário']} &nbsp;|&nbsp; 📍 <b>Local:</b> {ult_sm['Local']} &nbsp;|&nbsp; 🏷️ <b>Jogo #{ult_sm['Nº Jogo']}</b> &nbsp; {tag_status}
                     </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; text-align:center; gap: 4px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; text-align:center; gap: 2px;">
                         <div style="flex:1; min-width:0; overflow:hidden;">
                             <div class="team-name">{mandante_sm}</div>
-                            <div style="font-size:10px; color:#94a3b8; font-weight:700; margin-top:2px;">MANDANTE</div>
+                            <div style="font-size:9.5px; color:#94a3b8; font-weight:700; margin-top:2px;">MANDANTE</div>
                         </div>
-                        <div style="padding: 0 8px; flex-shrink:0;">
+                        <div style="padding: 0 4px; flex-shrink:0;">
                             <span class="score-badge">{ult_sm['Placar']}</span>
                         </div>
                         <div style="flex:1; min-width:0; overflow:hidden;">
                             <div class="team-name">{visitante_sm}</div>
-                            <div style="font-size:10px; color:#94a3b8; font-weight:700; margin-top:2px;">VISITANTE</div>
+                            <div style="font-size:9.5px; color:#94a3b8; font-weight:700; margin-top:2px;">VISITANTE</div>
                         </div>
                     </div>
                 </div>
@@ -846,10 +846,10 @@ if opcao == "Início":
                     v_fmt = formatar_equipe_com_escudo(ult['Visitante'], mapa_escudos)
                     
                     st.markdown(f"""
-                        <div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; padding:10px 14px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:8px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
-                            <div style="flex:2; text-align:left; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{m_fmt}</div>
-                            <div style="flex:1; text-align:center;"><span style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-weight:800; color:#160e91; font-size:11px;">{ult['Placar']}</span></div>
-                            <div style="flex:2; text-align:right; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{v_fmt}</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; padding:8px 10px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:8px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
+                            <div style="flex:2; text-align:left; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{m_fmt}</div>
+                            <div style="flex:1; text-align:center;"><span style="background:#f1f5f9; padding:3px 6px; border-radius:4px; font-weight:800; color:#160e91; font-size:10px;">{ult['Placar']}</span></div>
+                            <div style="flex:2; text-align:right; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{v_fmt}</div>
                         </div>
                     """, unsafe_allow_html=True)
             else:
