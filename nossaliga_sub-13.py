@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Estilização CSS customizada (Fundo amarelo bege claro e alto contraste universal para iPhone/Safari)
+# Estilização CSS customizada (Fundo amarelo bege claro e alto contraste universal)
 st.markdown(
     """
     <style>
@@ -163,7 +163,7 @@ st.markdown(
     }
 
     /* -------------------------------------------------------------------------
-       CORREÇÃO ROBUSTA DE ABAS E SUB-ABAS (ST.TABS) PARA SAFARI / IOS
+       CORREÇÃO ROBUSTA DE ABAS E SUB-ABAS (ST.TABS)
        ------------------------------------------------------------------------- */
     div[data-baseweb="tab-list"], [data-testid="stTabs"] [data-baseweb="tab-list"] {
         gap: 10px !important;
@@ -175,7 +175,6 @@ st.markdown(
         display: flex !important;
     }
 
-    /* Caixa com fundo branco para abas e sub-abas inativas */
     div[data-baseweb="tab-list"] button[data-baseweb="tab"],
     [data-testid="stTabs"] button[data-baseweb="tab"],
     [role="tab"] {
@@ -188,7 +187,6 @@ st.markdown(
         opacity: 1 !important;
     }
 
-    /* Texto azul escuro e negrito dentro da caixa branca para abas inativas */
     div[data-baseweb="tab-list"] button[data-baseweb="tab"] *,
     [data-testid="stTabs"] button[data-baseweb="tab"] *,
     [role="tab"] *,
@@ -209,7 +207,6 @@ st.markdown(
         border-color: #110888 !important;
     }
 
-    /* Estilo da aba / sub-aba selecionada (Fundo azul com texto branco) */
     div[data-baseweb="tab-list"] button[data-baseweb="tab"][aria-selected="true"],
     [data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"],
     [role="tab"][aria-selected="true"] {
@@ -268,7 +265,6 @@ st.markdown(
         font-weight: 800 !important;
     }
 
-    /* CORREÇÃO DO MENU DROPDOWN */
     div[data-baseweb="popover"], div[data-baseweb="menu"], ul[role="listbox"] {
         background-color: #ffffff !important;
     }
@@ -288,15 +284,18 @@ st.markdown(
         padding-bottom: 2px;
     }
     
-    /* TABELAS EM AZUL NEGRITO (COMPACTADAS) */
+    /* TABELAS EM AZUL NEGRITO (COMPACTADAS) COM SUPORTE A ROLAGEM */
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
     .custom-table {
         width: 100%;
         border-collapse: collapse;
         background-color: #ffffff;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        margin-bottom: 20px;
     }
     .custom-table th {
         background-color: #110888;
@@ -601,7 +600,8 @@ def formatar_tabela_classificacao_oficial(df, mapa_escudos, reatribuir_posicao=F
     return df
 
 def renderizar_tabela_html(df):
-    st.markdown(df.to_html(escape=False, index=False, classes="custom-table"), unsafe_allow_html=True)
+    html_tabela = df.to_html(escape=False, index=False, classes="custom-table")
+    st.markdown(f'<div class="table-responsive">{html_tabela}</div>', unsafe_allow_html=True)
 
 def obter_df_jogos():
     soup = carregar_dados_url(URL_JOGOS)
@@ -911,22 +911,21 @@ elif opcao == "Classificação Sub-13":
             st.warning("Não foi possível carregar a tabela de classificação geral oficial.")
 
     with tab_grupos:
-        col_g1, col_g2 = st.columns(2, gap="medium")
-        with col_g1:
-            st.markdown("### 🅰️ Grupo A")
-            if not df_ga_raw.empty:
-                df_ga_fmt = formatar_tabela_classificacao_oficial(df_ga_raw, mapa_escudos)
-                renderizar_tabela_html(df_ga_fmt)
-            else:
-                st.info("Dados do Grupo A indisponíveis no momento.")
-                
-        with col_g2:
-            st.markdown("### 🅱️ Grupo B")
-            if not df_gb_raw.empty:
-                df_gb_fmt = formatar_tabela_classificacao_oficial(df_gb_raw, mapa_escudos)
-                renderizar_tabela_html(df_gb_fmt)
-            else:
-                st.info("Dados do Grupo B indisponíveis no momento.")
+        st.markdown("### 🅰️ Grupo A")
+        if not df_ga_raw.empty:
+            df_ga_fmt = formatar_tabela_classificacao_oficial(df_ga_raw, mapa_escudos)
+            renderizar_tabela_html(df_ga_fmt)
+        else:
+            st.info("Dados do Grupo A indisponíveis no momento.")
+            
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        st.markdown("### 🅱️ Grupo B")
+        if not df_gb_raw.empty:
+            df_gb_fmt = formatar_tabela_classificacao_oficial(df_gb_raw, mapa_escudos)
+            renderizar_tabela_html(df_gb_fmt)
+        else:
+            st.info("Dados do Grupo B indisponíveis no momento.")
 
 elif opcao == "Jogos":
     botao_voltar_inicio("jogos")
