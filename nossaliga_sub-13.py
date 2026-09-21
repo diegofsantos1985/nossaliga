@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Estilização CSS customizada (Fundo cinza grafite, abas e menus visíveis no mobile)
+# Estilização CSS customizada (Fundo amarelo bege claro e alto contraste universal)
 st.markdown(
     """
     <style>
@@ -34,9 +34,17 @@ st.markdown(
         max-width: 280px !important;
     }
 
-    /* FUNDO DA PÁGINA EM CINZA GRAFITE */
-    .stApp { background-color: #2b2b2b !important; }
+    /* FUNDO DA PÁGINA EM AMARELO BEGE CLARO */
+    .stApp { background-color: #fdfbf7 !important; }
     
+    /* TÍTULOS GERAIS EM AZUL ESCURO PARA DESTACAR NO FUNDO CLARO */
+    h1, h2, h3, h4, h5, h6, 
+    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4 {
+        color: #110888 !important;
+        font-weight: 800 !important;
+        text-shadow: none !important;
+    }
+
     /* ELIMINAÇÃO TOTAL DE SOMBRAS E FANTASMAS NAS FONTES */
     * {
         text-shadow: none !important;
@@ -96,7 +104,7 @@ st.markdown(
     .match-header {
         font-size: 12px;
         font-weight: 800;
-        color: #f8f063;
+        color: #110888;
         text-transform: uppercase;
         letter-spacing: 0.5px;
         margin-bottom: 12px;
@@ -154,54 +162,60 @@ st.markdown(
         font-size: 10px;
     }
 
-    /* CORREÇÃO DEFINITIVA DAS ABAS (ST.TABS) */
-    div.stTabs [data-baseweb="tab-list"] {
-        gap: 8px !important;
-        background-color: transparent !important;
-        border-bottom: none !important;
+    /* -------------------------------------------------------------------------
+       CORREÇÃO UNIVERSAL DE ABAS E SUB-ABAS (ST.TABS) - ALTO CONTRASTE
+       ------------------------------------------------------------------------- */
+    div[data-baseweb="tab-list"] {
+        gap: 10px !important;
+        background-color: #f1f5f9 !important;
+        padding: 8px !important;
+        border-radius: 12px !important;
+        border: 1px solid #cbd5e1 !important;
         margin-bottom: 20px !important;
     }
 
-    div.stTabs [data-baseweb="tab"] {
+    /* Caixa com fundo branco para abas e sub-abas inativas */
+    div[data-baseweb="tab-list"] button[data-baseweb="tab"] {
         background-color: #ffffff !important;
         border-radius: 8px !important;
-        padding: 10px 20px !important;
-        border: 1px solid #cbd5e1 !important;
+        padding: 10px 18px !important;
+        border: 2px solid #cbd5e1 !important;
         height: auto !important;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.05) !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
     }
 
-    div.stTabs [data-baseweb="tab"][aria-selected="false"],
-    div.stTabs [data-baseweb="tab"][aria-selected="false"] p, 
-    div.stTabs [data-baseweb="tab"][aria-selected="false"] div, 
-    div.stTabs [data-baseweb="tab"][aria-selected="false"] span,
-    div.stTabs button[data-baseweb="tab"][aria-selected="false"] * {
-        color: #000000 !important;
-        -webkit-text-fill-color: #000000 !important;
+    /* Texto azul escuro e negrito dentro da caixa branca */
+    div[data-baseweb="tab-list"] button[data-baseweb="tab"] *,
+    div[data-baseweb="tab-list"] button[data-baseweb="tab"] p,
+    div[data-baseweb="tab-list"] button[data-baseweb="tab"] span,
+    div[data-baseweb="tab-list"] button[data-baseweb="tab"] div {
+        color: #110888 !important;
+        -webkit-text-fill-color: #110888 !important;
         font-weight: 800 !important;
-        font-size: 13px !important;
+        font-size: 14px !important;
         text-shadow: none !important;
     }
 
-    div.stTabs [data-baseweb="tab"]:hover {
-        background-color: #f1f5f9 !important;
+    div[data-baseweb="tab-list"] button[data-baseweb="tab"]:hover {
+        background-color: #e2e8f0 !important;
+        border-color: #110888 !important;
     }
 
-    div.stTabs [data-baseweb="tab"][aria-selected="true"] {
+    /* Estilo da aba / sub-aba selecionada (Fundo azul com texto branco) */
+    div[data-baseweb="tab-list"] button[data-baseweb="tab"][aria-selected="true"] {
         background-color: #110888 !important;
-        border: 2px solid #110888 !important;
+        border: 2px solid #ffffff !important;
     }
 
-    div.stTabs [data-baseweb="tab"][aria-selected="true"],
-    div.stTabs [data-baseweb="tab"][aria-selected="true"] p,
-    div.stTabs [data-baseweb="tab"][aria-selected="true"] div,
-    div.stTabs [data-baseweb="tab"][aria-selected="true"] span,
-    div.stTabs button[data-baseweb="tab"][aria-selected="true"] * {
+    div[data-baseweb="tab-list"] button[data-baseweb="tab"][aria-selected="true"] *,
+    div[data-baseweb="tab-list"] button[data-baseweb="tab"][aria-selected="true"] p,
+    div[data-baseweb="tab-list"] button[data-baseweb="tab"][aria-selected="true"] span,
+    div[data-baseweb="tab-list"] button[data-baseweb="tab"][aria-selected="true"] div {
         color: #ffffff !important;
         -webkit-text-fill-color: #ffffff !important;
     }
 
-    div.stTabs [data-baseweb="tab-highlight"] {
+    div[data-baseweb="tab-highlight"] {
         display: none !important;
     }
 
@@ -209,7 +223,7 @@ st.markdown(
     div[data-testid="stSelectbox"] label {
         font-size: 12px !important;
         font-weight: 800 !important;
-        color: #ffffff !important;
+        color: #110888 !important;
         text-transform: uppercase !important;
         letter-spacing: 0.5px !important;
         margin-bottom: 4px !important;
@@ -232,13 +246,15 @@ st.markdown(
 
     div[data-testid="stSelectbox"] [data-baseweb="select"] *,
     div[data-testid="stSelectbox"] div[data-baseweb="select"] span,
-    div[data-testid="stSelectbox"] div[data-baseweb="select"] div {
+    div[data-testid="stSelectbox"] div[data-baseweb="select"] div,
+    div[data-testid="stSelectbox"] [role="combobox"],
+    div[data-testid="stSelectbox"] [role="combobox"] * {
         color: #ffffff !important;
         -webkit-text-fill-color: #ffffff !important;
         font-weight: 800 !important;
     }
 
-    /* CORREÇÃO DO MENU DROPDOWN (LISTA DE OPÇÕES DO SELECTBOX NO MOBILE) */
+    /* CORREÇÃO DO MENU DROPDOWN */
     div[data-baseweb="popover"], div[data-baseweb="menu"], ul[role="listbox"] {
         background-color: #ffffff !important;
     }
@@ -847,7 +863,7 @@ if opcao == "Início":
                 ultima_data = df_realizados_geral.iloc[-1]['Data']
                 df_ultima_rodada = df_realizados_geral[df_realizados_geral['Data'] == ultima_data].copy()
                 
-                st.markdown(f"<div style='font-size: 13px; color: #f8f063; font-weight: 700; margin-bottom: 12px;'>📅 Data da Rodada: {ultima_data}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='font-size: 13px; color: #110888; font-weight: 700; margin-bottom: 12px;'>📅 Data da Rodada: {ultima_data}</div>", unsafe_allow_html=True)
                 
                 for _, ult in df_ultima_rodada.iterrows():
                     m_fmt = formatar_equipe_com_escudo(ult['Mandante'], mapa_escudos)
@@ -883,7 +899,7 @@ elif opcao == "Classificação Sub-13":
     with tab_grupos:
         col_g1, col_g2 = st.columns(2, gap="medium")
         with col_g1:
-            st.markdown("<h3 style='color: #ffffff;'>🅰️ Grupo A</h3>", unsafe_allow_html=True)
+            st.markdown("### 🅰️ Grupo A")
             if not df_ga_raw.empty:
                 df_ga_fmt = formatar_tabela_classificacao_oficial(df_ga_raw, mapa_escudos)
                 renderizar_tabela_html(df_ga_fmt)
@@ -891,7 +907,7 @@ elif opcao == "Classificação Sub-13":
                 st.info("Dados do Grupo A indisponíveis no momento.")
                 
         with col_g2:
-            st.markdown("<h3 style='color: #ffffff;'>🅱️ Grupo B</h3>", unsafe_allow_html=True)
+            st.markdown("### 🅱️ Grupo B")
             if not df_gb_raw.empty:
                 df_gb_fmt = formatar_tabela_classificacao_oficial(df_gb_raw, mapa_escudos)
                 renderizar_tabela_html(df_gb_fmt)
@@ -923,14 +939,14 @@ elif opcao == "Jogos":
         df_proximos = df_jogos_filtrados[~is_realizado].copy()
         
         with tab_anteriores:
-            st.markdown("<h3 style='color: #ffffff; font-size: 15px;'>⏪ Jogos Anteriores (Com Resultado)</h3>", unsafe_allow_html=True)
+            st.markdown("### ⏪ Jogos Anteriores (Com Resultado)")
             if not df_anteriores.empty:
                 renderizar_tabela_html(df_anteriores)
             else:
                 st.info("Nenhum jogo anterior encontrado para a seleção.")
                 
         with tab_proximos:
-            st.markdown("<h3 style='color: #ffffff; font-size: 15px;'>⏩ Próximos Jogos (A Realizar)</h3>", unsafe_allow_html=True)
+            st.markdown("### ⏩ Próximos Jogos (A Realizar)")
             if not df_proximos.empty:
                 renderizar_tabela_html(df_proximos)
             else:
@@ -1042,14 +1058,14 @@ elif opcao == "Cartões Amarelos e Vermelhos":
         tab_amarelos, tab_vermelhos = st.tabs(["🟨 Cartões Amarelos", "🟥 Cartões Vermelhos"])
 
         with tab_amarelos:
-            st.markdown("<h3 style='color: #ffffff;'>Cartões Amarelos</h3>", unsafe_allow_html=True)
+            st.markdown("### Cartões Amarelos")
             if not df_amarelos.empty:
                 renderizar_tabela_html(df_amarelos)
             else:
                 st.info("Nenhum registro de cartão amarelo para esta seleção.")
 
         with tab_vermelhos:
-            st.markdown("<h3 style='color: #ffffff;'>Cartões Vermelhos</h3>", unsafe_allow_html=True)
+            st.markdown("### Cartões Vermelhos")
             if not df_vermelhos.empty:
                 renderizar_tabela_html(df_vermelhos)
             else:
@@ -1093,7 +1109,7 @@ elif opcao == "Suspensão":
             ])
 
             with tab_atletas:
-                st.markdown("<h3 style='color: #ffffff;'>Penalização de Atletas</h3>", unsafe_allow_html=True)
+                st.markdown("### Penalização de Atletas")
                 if "Atleta" in df_bruto.columns:
                     df_atl = df_bruto[
                         df_bruto["Atleta"].notna() & 
@@ -1112,7 +1128,7 @@ elif opcao == "Suspensão":
                     st.info("Nenhuma penalização de atleta encontrada.")
 
             with tab_comissao:
-                st.markdown("<h3 style='color: #ffffff;'>Penalização de Comissão Técnica</h3>", unsafe_allow_html=True)
+                st.markdown("### Penalização de Comissão Técnica")
                 
                 cols_brutas = list(df_bruto.columns)
                 col_eq_comissao = None
@@ -1158,7 +1174,7 @@ elif opcao == "Suspensão":
                     st.info("Nenhuma penalização de comissão técnica encontrada.")
 
             with tab_equipes:
-                st.markdown("<h3 style='color: #ffffff;'>Penalização de Equipes</h3>", unsafe_allow_html=True)
+                st.markdown("### Penalização de Equipes")
                 df_eq = df_bruto.copy()
                 
                 if "Atleta" in df_eq.columns:
