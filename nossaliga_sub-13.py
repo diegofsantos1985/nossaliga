@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Estilização CSS customizada (Fundo amarelo bege claro e alto contraste universal)
+# Estilização CSS customizada (Fundo amarelo bege claro e alto contraste universal para iPhone/Safari)
 st.markdown(
     """
     <style>
@@ -163,54 +163,68 @@ st.markdown(
     }
 
     /* -------------------------------------------------------------------------
-       CORREÇÃO UNIVERSAL DE ABAS E SUB-ABAS (ST.TABS) - ALTO CONTRASTE
+       CORREÇÃO ROBUSTA DE ABAS E SUB-ABAS (ST.TABS) PARA SAFARI / IOS
        ------------------------------------------------------------------------- */
-    div[data-baseweb="tab-list"] {
+    div[data-baseweb="tab-list"], [data-testid="stTabs"] [data-baseweb="tab-list"] {
         gap: 10px !important;
         background-color: #f1f5f9 !important;
         padding: 8px !important;
         border-radius: 12px !important;
         border: 1px solid #cbd5e1 !important;
         margin-bottom: 20px !important;
+        display: flex !important;
     }
 
     /* Caixa com fundo branco para abas e sub-abas inativas */
-    div[data-baseweb="tab-list"] button[data-baseweb="tab"] {
+    div[data-baseweb="tab-list"] button[data-baseweb="tab"],
+    [data-testid="stTabs"] button[data-baseweb="tab"],
+    [role="tab"] {
         background-color: #ffffff !important;
         border-radius: 8px !important;
         padding: 10px 18px !important;
         border: 2px solid #cbd5e1 !important;
         height: auto !important;
         box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
+        opacity: 1 !important;
     }
 
-    /* Texto azul escuro e negrito dentro da caixa branca */
+    /* Texto azul escuro e negrito dentro da caixa branca para abas inativas */
     div[data-baseweb="tab-list"] button[data-baseweb="tab"] *,
-    div[data-baseweb="tab-list"] button[data-baseweb="tab"] p,
-    div[data-baseweb="tab-list"] button[data-baseweb="tab"] span,
-    div[data-baseweb="tab-list"] button[data-baseweb="tab"] div {
+    [data-testid="stTabs"] button[data-baseweb="tab"] *,
+    [role="tab"] *,
+    [role="tab"] p,
+    [role="tab"] span,
+    [role="tab"] div {
         color: #110888 !important;
         -webkit-text-fill-color: #110888 !important;
         font-weight: 800 !important;
         font-size: 14px !important;
         text-shadow: none !important;
+        opacity: 1 !important;
     }
 
-    div[data-baseweb="tab-list"] button[data-baseweb="tab"]:hover {
+    div[data-baseweb="tab-list"] button[data-baseweb="tab"]:hover,
+    [role="tab"]:hover {
         background-color: #e2e8f0 !important;
         border-color: #110888 !important;
     }
 
     /* Estilo da aba / sub-aba selecionada (Fundo azul com texto branco) */
-    div[data-baseweb="tab-list"] button[data-baseweb="tab"][aria-selected="true"] {
+    div[data-baseweb="tab-list"] button[data-baseweb="tab"][aria-selected="true"],
+    [data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"],
+    [role="tab"][aria-selected="true"] {
         background-color: #110888 !important;
         border: 2px solid #ffffff !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
     }
 
     div[data-baseweb="tab-list"] button[data-baseweb="tab"][aria-selected="true"] *,
-    div[data-baseweb="tab-list"] button[data-baseweb="tab"][aria-selected="true"] p,
-    div[data-baseweb="tab-list"] button[data-baseweb="tab"][aria-selected="true"] span,
-    div[data-baseweb="tab-list"] button[data-baseweb="tab"][aria-selected="true"] div {
+    [data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] *,
+    [role="tab"][aria-selected="true"] *,
+    [role="tab"][aria-selected="true"] p,
+    [role="tab"][aria-selected="true"] span,
+    [role="tab"][aria-selected="true"] div {
         color: #ffffff !important;
         -webkit-text-fill-color: #ffffff !important;
     }
