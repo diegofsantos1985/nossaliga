@@ -1236,30 +1236,31 @@ elif opcao == "Atletas — Colégio Santa Maria (Sub-13)":
     renderizar_cabecalho_secao("🏃 Atletas — Colégio Santa Maria (Sub-13)")
     
     atletas_csm = [
-        ("André Monte Figueiredo", "25"),
-        ("Bruno Monteiro Loureiro Amorim Filho", "70"),
-        ("Filipe Rodrigues de Araújo Filho", "72"),
-        ("Francisco Ouriques Lacerda Vidal", "12"),
-        ("Gabriel Modesto Pereira Minghini Quirino dos Santos", "14"),
-        ("Guilherme Canto Motta Gomes", "32"),
-        ("Guilherme Marroquim Braga de Morais", "26"),
-        ("Heitor Marques Maciel Pinheiro", "10"),
-        ("Henrique Carvalho Tenório Cavalcanti", "Pendente"),
-        ("Henrique Ponce Maranhão Miranda", "87"),
-        ("João Antônio Wanderley Azevedo Saraiva", "Pendente"),
-        ("José Anacleto de Andrade do Nascimento Neto", "20"),
-        ("José Carlos Pereira Santos Neto", "63"),
-        ("José Matheus Locio Peixoto", "57"),
-        ("Lucca Normande Peixoto", "35"),
-        ("Miguel Freire de Araújo Pereira", "85"),
-        ("Pedro Henrique Vaz Manso Braga", "77"),
-        ("Théo Dall Agnol Albuquerque", "10"),
-        ("Willyam Ponzi Neto", "28")
+        ("André Monte Figueiredo", "25", "Fixo"),
+        ("Bruno Monteiro Loureiro Amorim Filho", "70", "Ala"),
+        ("Filipe Rodrigues de Araújo Filho", "72", "Goleiro"),
+        ("Francisco Ouriques Lacerda Vidal", "12", "Goleiro"),
+        ("Gabriel Modesto Pereira Minghini Quirino dos Santos", "14", "Pivô"),
+        ("Guilherme Canto Motta Gomes", "32", "Goleiro"),
+        ("Guilherme Marroquim Braga de Morais", "26", "Fixo"),
+        ("Heitor Marques Maciel Pinheiro", "10", "Ala / Pivô"),
+        ("Henrique Carvalho Tenório Cavalcanti", "Pendente", "Ala"),
+        ("Henrique Ponce Maranhão Miranda", "87", "Ala / Fixo"),
+        ("João Antônio Wanderley Azevedo Saraiva", "Pendente", "Ala"),
+        ("José Anacleto de Andrade do Nascimento Neto", "20", "Pivô"),
+        ("José Carlos Pereira Santos Neto", "63", "Pivô"),
+        ("José Matheus Locio Peixoto", "57", "Ala"),
+        ("Lucca Normande Peixoto", "35", "Ala"),
+        ("Miguel Freire de Araújo Pereira", "85", "Fixo"),
+        ("Pedro Henrique Vaz Manso Braga", "77", "Ala"),
+        ("Théo Dall Agnol Albuquerque", "10", "Fixo"),
+        ("Willyam Ponzi Neto", "28", "Ala")
     ]
     
     df_atletas = pd.DataFrame({
         "Nº da Camisa": [item[1] for item in atletas_csm],
-        "Nome do Atleta": [item[0] for item in atletas_csm]
+        "Nome do Atleta": [item[0] for item in atletas_csm],
+        "Posição do Atleta": [item[2] for item in atletas_csm]
     })
     
     renderizar_tabela_html(df_atletas)
