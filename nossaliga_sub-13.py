@@ -1244,7 +1244,7 @@ elif opcao == "Atletas — Colégio Santa Maria (Sub-13)":
         ("Guilherme Canto Motta Gomes", "32", "Goleiro"),
         ("Guilherme Marroquim Braga de Morais", "26", "Fixo"),
         ("Heitor Marques Maciel Pinheiro", "10", "Ala / Pivô"),
-        ("Henrique Carvalho Tenório Cavalcanti", "Pendente", "Ala"),
+        ("Henrique Carvalho Tenório Cavalcanti", "15", "Ala"),
         ("Henrique Ponce Maranhão Miranda", "87", "Ala / Fixo"),
         ("João Antônio Wanderley Azevedo Saraiva", "Pendente", "Ala"),
         ("José Anacleto de Andrade do Nascimento Neto", "20", "Pivô"),
