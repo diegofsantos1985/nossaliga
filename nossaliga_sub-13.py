@@ -96,7 +96,7 @@ st.markdown(
     .match-box {
         background: #ffffff;
         border-radius: 12px;
-        padding: 12px 10px;
+        padding: 12px 14px;
         border: 1px solid #cbd5e1;
         box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         margin-bottom: 20px;
@@ -107,35 +107,31 @@ st.markdown(
         color: #110888;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        margin-bottom: 12px;
+        margin-bottom: 8px;
     }
-    .team-name { 
-        font-size: 11.5px; 
-        font-weight: 800; 
-        color: #0f172a; 
+    .team-cell {
         display: inline-flex;
         align-items: center;
-        justify-content: center;
-        gap: 4px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 100%;
+        gap: 6px;
+        font-weight: 800;
+        color: #110888 !important;
+        font-size: 12px;
     }
     .team-logo {
-        width: 15px;
-        height: 15px;
+        width: 16px;
+        height: 16px;
         object-fit: contain;
         flex-shrink: 0;
     }
     .score-badge {
-        font-size: 15px;
+        font-size: 13px;
         font-weight: 800;
         color: #160e91;
         background: #f1f5f9;
-        padding: 4px 8px;
+        padding: 4px 10px;
         border-radius: 6px;
         display: inline-block;
+        border: 1px solid #cbd5e1;
     }
     .status-vitoria {
         background-color: #22c55e;
@@ -315,16 +311,6 @@ st.markdown(
     }
     .custom-table tr:hover {
         background-color: #f8fafc;
-    }
-    .team-cell {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-weight: 800;
-        color: #110888 !important;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
     </style>
 """,
@@ -542,8 +528,8 @@ def formatar_equipe_com_escudo(nome_equipe, mapa_escudos):
             break
 
     if url_escudo:
-        return f'<div class="team-cell"><img src="{url_escudo}" class="team-logo" /><span style="color: #110888 !important; font-weight: 800 !important; white-space: nowrap;">{nome_clean}</span></div>'
-    return f'<span style="color: #110888 !important; font-weight: 800 !important; white-space: nowrap;">{nome_clean}</span>'
+        return f'<span class="team-cell"><img src="{url_escudo}" class="team-logo" /><span>{nome_clean}</span></span>'
+    return f'<span>{nome_clean}</span>'
 
 def formatar_tabela_classificacao_oficial(df, mapa_escudos, reatribuir_posicao=False):
     if df.empty:
@@ -627,6 +613,31 @@ def obter_df_jogos():
                 })
     return pd.DataFrame(jogos_dados)
 
+def obter_detalhes_jogo_por_numero_ou_times(df_jogos, num_jogo_str=None, eq1=None, eq2=None):
+    if df_jogos.empty:
+        return "", "", ""
+    
+    if num_jogo_str:
+        num_limpo = re.sub(r'\D', '', str(num_jogo_str))
+        if num_limpo:
+            match_row = df_jogos[df_jogos["Nº Jogo"].astype(str).str.strip() == num_limpo]
+            if not match_row.empty:
+                r = match_row.iloc[0]
+                return r.get("Data", ""), r.get("Horário", ""), r.get("Local", "")
+                
+    if eq1 and eq2 and not any(k in str(eq1).lower() for k in ["grupo", "vencedor", "perdedor"]) and not any(k in str(eq2).lower() for k in ["grupo", "vencedor", "perdedor"]):
+        match_row = df_jogos[
+            ((df_jogos["Mandante"].str.strip().str.lower() == str(eq1).strip().lower()) & 
+             (df_jogos["Visitante"].str.strip().str.lower() == str(eq2).strip().lower())) |
+            ((df_jogos["Mandante"].str.strip().str.lower() == str(eq2).strip().lower()) & 
+             (df_jogos["Visitante"].str.strip().str.lower() == str(eq1).strip().lower()))
+        ]
+        if not match_row.empty:
+            r = match_row.iloc[0]
+            return r.get("Data", ""), r.get("Horário", ""), r.get("Local", "")
+            
+    return "", "", ""
+
 def obter_posicoes_santa_maria():
     pos_geral = "N/I"
     pos_grupo = "N/I"
@@ -659,6 +670,21 @@ def obter_posicoes_santa_maria():
             break
 
     return pos_geral, pos_grupo
+
+def extrair_lista_equipes_grupo(df):
+    equipes = []
+    if df.empty:
+        return equipes
+    df_l = limpar_colunas_df(df)
+    for _, row in df_l.iterrows():
+        if len(row) >= 2:
+            nome = str(row.iloc[1]).strip()
+            if not nome or nome.lower() in ["none", "nan"] or nome.isdigit():
+                if len(row) > 2:
+                    nome = str(row.iloc[2]).strip()
+            if nome and nome.lower() not in ["none", "nan"]:
+                equipes.append(nome)
+    return equipes
 
 def ir_para_inicio():
     st.session_state["aba_radio"] = "Início"
@@ -709,11 +735,13 @@ if st.sidebar.button("🔄 Atualizar Dados Agora"):
 opcoes_menu = [
     "Início", 
     "Classificação Sub-13", 
+    "Eliminatórias",
     "Jogos", 
     "Artilharia", 
     "Cartões Amarelos e Vermelhos", 
     "Suspensão",
-    "Atletas — Colégio Santa Maria (Sub-13)"
+    "Atletas — Colégio Santa Maria (Sub-13)",
+    "Jogos Gravados"
 ]
 
 if "aba_radio" not in st.session_state:
@@ -808,14 +836,14 @@ if opcao == "Início":
                     </div>
                     <div style="display:flex; justify-content:space-between; align-items:center; text-align:center; gap: 2px;">
                         <div style="flex:1; min-width:0; overflow:hidden;">
-                            <div class="team-name">{mandante_formatted}</div>
+                            <div style="font-size:11.5px; font-weight:800; color:#0f172a;">{mandante_formatted}</div>
                             <div style="font-size:9.5px; color:#94a3b8; font-weight:700; margin-top:2px;">MANDANTE</div>
                         </div>
                         <div style="padding: 0 4px; flex-shrink:0;">
                             <span class="score-badge">X</span>
                         </div>
                         <div style="flex:1; min-width:0; overflow:hidden;">
-                            <div class="team-name">{visitante_formatted}</div>
+                            <div style="font-size:11.5px; font-weight:800; color:#0f172a;">{visitante_formatted}</div>
                             <div style="font-size:9.5px; color:#94a3b8; font-weight:700; margin-top:2px;">VISITANTE</div>
                         </div>
                     </div>
@@ -851,14 +879,14 @@ if opcao == "Início":
                     </div>
                     <div style="display:flex; justify-content:space-between; align-items:center; text-align:center; gap: 2px;">
                         <div style="flex:1; min-width:0; overflow:hidden;">
-                            <div class="team-name">{mandante_sm}</div>
+                            <div style="font-size:11.5px; font-weight:800; color:#0f172a;">{mandante_sm}</div>
                             <div style="font-size:9.5px; color:#94a3b8; font-weight:700; margin-top:2px;">MANDANTE</div>
                         </div>
                         <div style="padding: 0 4px; flex-shrink:0;">
                             <span class="score-badge">{ult_sm['Placar']}</span>
                         </div>
                         <div style="flex:1; min-width:0; overflow:hidden;">
-                            <div class="team-name">{visitante_sm}</div>
+                            <div style="font-size:11.5px; font-weight:800; color:#0f172a;">{visitante_sm}</div>
                             <div style="font-size:9.5px; color:#94a3b8; font-weight:700; margin-top:2px;">VISITANTE</div>
                         </div>
                     </div>
@@ -926,6 +954,139 @@ elif opcao == "Classificação Sub-13":
             renderizar_tabela_html(df_gb_fmt)
         else:
             st.info("Dados do Grupo B indisponíveis no momento.")
+
+elif opcao == "Eliminatórias":
+    botao_voltar_inicio("eliminatorias")
+    renderizar_cabecalho_secao("🏆 Fase Eliminatória (Mata-Mata) — Sub-13 Masculino")
+    
+    df_geral_raw, df_ga_raw, df_gb_raw = obter_todas_tabelas_classificacao()
+    eqs_ga = extrair_lista_equipes_grupo(df_ga_raw)
+    eqs_gb = extrair_lista_equipes_grupo(df_gb_raw)
+    df_jogos_todos = obter_df_jogos()
+    
+    def renderizar_card_confronto(titulo_card, num_jogo, eq_mandante, eq_visitante, sub_mandante="", sub_visitante=""):
+        data, horario, local = "", "", ""
+        if not df_jogos_todos.empty:
+            data, horario, local = obter_detalhes_jogo_por_numero_ou_times(df_jogos_todos, num_jogo, eq_mandante, eq_visitante)
+            
+        with st.container():
+            st.markdown(f"""
+                <div class="match-box">
+                    <div class="match-header">🏷️ {titulo_card} {f"(Jogo #{num_jogo})" if num_jogo else ""}</div>
+            """, unsafe_allow_html=True)
+            
+            if data and data.lower() not in ["none", "nan", ""]:
+                st.markdown(f"<div style='font-size:11px; color:#475569; margin-bottom:8px; font-weight:600;'>📅 <b>Data:</b> {data} às {horario} &nbsp;|&nbsp; 📍 <b>Local:</b> {local}</div>", unsafe_allow_html=True)
+            else:
+                st.markdown("<div style='font-size:11px; color:#64748b; margin-bottom:8px; font-weight:600;'>📅 <i>Data, horário e local a definir pela organização no site oficial.</i></div>", unsafe_allow_html=True)
+
+            col_esp1, col_m, col_v, col_d, col_esp2 = st.columns([0.5, 3.0, 0.8, 3.0, 0.5])
+            with col_m:
+                m_fmt = formatar_equipe_com_escudo(eq_mandante, mapa_escudos)
+                st.markdown(f"""
+                    <div style="font-size:11.5px; font-weight:800; color:#0f172a; text-align:right;">{m_fmt}</div>
+                    <div style="font-size:9.5px; color:#94a3b8; font-weight:700; margin-top:2px; text-align:right;">{sub_mandante}</div>
+                """, unsafe_allow_html=True)
+            with col_v:
+                st.markdown("<div style='text-align:center;'><span class='score-badge'>VS</span></div>", unsafe_allow_html=True)
+            with col_d:
+                v_fmt = formatar_equipe_com_escudo(eq_visitante, mapa_escudos)
+                st.markdown(f"""
+                    <div style="font-size:11.5px; font-weight:800; color:#0f172a; text-align:left;">{v_fmt}</div>
+                    <div style="font-size:9.5px; color:#94a3b8; font-weight:700; margin-top:2px; text-align:left;">{sub_visitante}</div>
+                """, unsafe_allow_html=True)
+            
+            st.markdown("</div>", unsafe_allow_html=True)
+    
+    tab_oitavas, tab_quartas, tab_semi_ouro, tab_final_ouro, tab_bronze, tab_semi_prata, tab_final_prata, tab_terceiro = st.tabs([
+        "Oitavas de Final", 
+        "Quartas de Final", 
+        "Semi-Final Ouro", 
+        "Final Ouro", 
+        "Mata-Mata Bronze", 
+        "Semi-Final Prata", 
+        "Final Prata", 
+        "Disputa Terceiro Lugar"
+    ])
+    
+    with tab_oitavas:
+        st.markdown("### ⚔️ Oitavas de Final (Confrontos do Grupo A e Grupo B)")
+        col_ga, col_gb = st.columns(2)
+        
+        with col_ga:
+            st.markdown("#### 🅰️ Grupo A")
+            pairs_a = [(0, 7, 1, 8), (1, 6, 2, 7), (2, 5, 3, 6), (3, 4, 4, 5)]
+            for idx, (i1, i2, p1, p2) in enumerate(pairs_a):
+                t1 = eqs_ga[i1] if i1 < len(eqs_ga) else f"{p1}º Grupo A"
+                t2 = eqs_ga[i2] if i2 < len(eqs_ga) else f"{p2}º Grupo A"
+                renderizar_card_confronto(f"{idx+1}ª Oitavas de Final (Grupo A)", None, t1, t2, f"{p1}º Colocado", f"{p2}º Colocado")
+
+        with col_gb:
+            st.markdown("#### 🅱️ Grupo B")
+            pairs_b = [(0, 7, 1, 8), (1, 6, 2, 7), (2, 5, 3, 6), (3, 4, 4, 5)]
+            for idx, (i1, i2, p1, p2) in enumerate(pairs_b):
+                t1 = eqs_gb[i1] if i1 < len(eqs_gb) else f"{p1}º Grupo B"
+                t2 = eqs_gb[i2] if i2 < len(eqs_gb) else f"{p2}º Grupo B"
+                renderizar_card_confronto(f"{idx+5}ª Oitavas de Final (Grupo B)", None, t1, t2, f"{p1}º Colocado", f"{p2}º Colocado")
+                
+    with tab_quartas:
+        st.markdown("### ⚔️ Quartas de Final")
+        renderizar_card_confronto("1ª Quartas de Final", None, "Vencedor (1º vs 8º GA)", "Vencedor (4º vs 5º GA)", "Confronto A", "Confronto A")
+        renderizar_card_confronto("2ª Quartas de Final", None, "Vencedor (2º vs 7º GA)", "Vencedor (3º vs 6º GA)", "Confronto A", "Confronto A")
+        renderizar_card_confronto("3ª Quartas de Final", None, "Vencedor (1º vs 8º GB)", "Vencedor (4º vs 5º GB)", "Confronto B", "Confronto B")
+        renderizar_card_confronto("4ª Quartas de Final", None, "Vencedor (2º vs 7º GB)", "Vencedor (3º vs 6º GB)", "Confronto B", "Confronto B")
+        
+    with tab_semi_ouro:
+        st.markdown("### ⚔️ Semi-Final Ouro")
+        renderizar_card_confronto("1ª Semi-Final Ouro", None, "Vencedor 1ª Quartas", "Vencedor 2ª Quartas", "Semifinalista", "Semifinalista")
+        renderizar_card_confronto("2ª Semi-Final Ouro", None, "Vencedor 3ª Quartas", "Vencedor 4ª Quartas", "Semifinalista", "Semifinalista")
+        
+    with tab_final_ouro:
+        st.markdown("### 🏆 Final Ouro")
+        renderizar_card_confronto("Grande Final Ouro", None, "Vencedor Semi 1 Ouro", "Vencedor Semi 2 Ouro", "Finalista", "Finalista")
+        
+    with tab_bronze:
+        st.markdown("### 🥉 Mata-Mata Bronze")
+        st.markdown("Confrontos eliminatórios do Chaveamento Bronze divididos por Grupo:")
+        
+        col_bronze_a, col_bronze_b = st.columns(2)
+        
+        with col_bronze_a:
+            st.markdown("#### 🅰️ Grupo A")
+            jogos_bronze_a = [
+                ("1º Jogo Mata-Mata Bronze", "218", "Perdedor do Jogo 210", 13, eqs_ga, "14º Grupo A"),
+                ("9º Jogo Mata-Mata Bronze", "226", "Perdedor do Jogo 211", 12, eqs_ga, "13º Grupo A"),
+                ("8º Jogo Mata-Mata Bronze", "225", "Perdedor do Jogo 212", 11, eqs_ga, "12º Grupo A"),
+                ("7º Jogo Mata-Mata Bronze", "224", "Perdedor do Jogo 213", 10, eqs_ga, "11º Grupo A"),
+            ]
+            for titulo_j, num_jogo, desc_perdedor, idx_eq, lista_eqs, fallback_pos in jogos_bronze_a:
+                t_equipe = lista_eqs[idx_eq] if idx_eq < len(lista_eqs) else fallback_pos
+                renderizar_card_confronto(f"{titulo_j}", num_jogo, desc_perdedor, t_equipe, "Origem", fallback_pos)
+
+        with col_bronze_b:
+            st.markdown("#### 🅱️ Grupo B")
+            jogos_bronze_b = [
+                ("Mata-Mata Bronze — Grupo B", "219", "Perdedor do Jogo 214", 13, eqs_gb, "14º Grupo B"),
+                ("Mata-Mata Bronze — Grupo B", "227", "Perdedor do Jogo 215", 12, eqs_gb, "13º Grupo B"),
+                ("Mata-Mata Bronze — Grupo B", "228", "Perdedor do Jogo 216", 11, eqs_gb, "12º Grupo B"),
+                ("Mata-Mata Bronze — Grupo B", "229", "Perdedor do Jogo 217", 10, eqs_gb, "11º Grupo B"),
+            ]
+            for titulo_j, num_jogo, desc_perdedor, idx_eq, lista_eqs, fallback_pos in jogos_bronze_b:
+                t_equipe = lista_eqs[idx_eq] if idx_eq < len(lista_eqs) else fallback_pos
+                renderizar_card_confronto(f"{titulo_j}", num_jogo, desc_perdedor, t_equipe, "Origem", fallback_pos)
+        
+    with tab_semi_prata:
+        st.markdown("### 🥈 Semi-Final Prata")
+        renderizar_card_confronto("1ª Semi-Final Prata", None, "Equipe A", "Equipe B", "Semifinalista Prata", "Semifinalista Prata")
+        renderizar_card_confronto("2ª Semi-Final Prata", None, "Equipe C", "Equipe D", "Semifinalista Prata", "Semifinalista Prata")
+        
+    with tab_final_prata:
+        st.markdown("### 🥈 Final Prata")
+        renderizar_card_confronto("Grande Final Prata", None, "Vencedor Semi 1 Prata", "Vencedor Semi 2 Prata", "Finalista Prata", "Finalista Prata")
+        
+    with tab_terceiro:
+        st.markdown("### 🥉 Disputa Terceiro Lugar")
+        renderizar_card_confronto("Disputa de 3º Lugar Ouro", None, "Perdedor Semi 1 Ouro", "Perdedor Semi 2 Ouro", "3º Lugar", "3º Lugar")
 
 elif opcao == "Jogos":
     botao_voltar_inicio("jogos")
@@ -1264,3 +1425,29 @@ elif opcao == "Atletas — Colégio Santa Maria (Sub-13)":
     })
     
     renderizar_tabela_html(df_atletas)
+
+elif opcao == "Jogos Gravados":
+    botao_voltar_inicio("jogos_gravados")
+    renderizar_cabecalho_secao("📺 Jogos Gravados e Transmissões — Sub-13 Masculino")
+    
+    st.markdown("### 🔴 Partidas Gravadas")
+    st.markdown("*(Nota: Ordenadas cronologicamente do mais antigo para o mais recente).*")
+    
+    # Ordenado do mais antigo para o mais recente com os confrontos especificados
+    videos_gravados = [
+        ("Santa Maria x Visão (Mais Antigo)", "https://www.youtube.com/watch?v=_poW1993bDE"),
+        ("Santa Maria x Apoio", "https://www.youtube.com/watch?v=IWydiKQdSvA&t=1062s"),
+        ("Santa Maria x São Luiz (Mais Recente)", "https://www.youtube.com/watch?v=gaxXctACWH4")
+    ]
+    
+    # Renderização em 3 colunas menores lado a lado
+    cols_videos = st.columns(3)
+    
+    for idx, (titulo_v, url_v) in enumerate(videos_gravados):
+        with cols_videos[idx]:
+            st.markdown(f"**⚽ {titulo_v}**")
+            st.markdown(f"🔗 [Abrir no YouTube]({url_v})")
+            try:
+                st.video(url_v)
+            except Exception:
+                st.warning("Player indisponível.")
