@@ -1,5 +1,6 @@
 import io
 import re
+import html
 import pandas as pd
 import requests
 import streamlit as st
@@ -114,7 +115,7 @@ st.markdown(
     .match-box {
         background: #ffffff;
         border-radius: 12px;
-        padding: 12px 14px;
+        padding: 14px 16px;
         border: 1px solid #cbd5e1;
         box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         margin-bottom: 20px;
@@ -127,19 +128,12 @@ st.markdown(
         letter-spacing: 0.5px;
         margin-bottom: 8px;
     }
-    .team-cell {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-weight: 800;
-        color: #110888 !important;
-        font-size: 12px;
-    }
     .team-logo {
         width: 16px;
         height: 16px;
         object-fit: contain;
         flex-shrink: 0;
+        vertical-align: middle;
     }
     .score-badge {
         font-size: 13px;
@@ -367,10 +361,24 @@ def carregar_dados_url(url):
 def renderizar_cabecalho_secao(titulo):
     st.markdown(f'<div class="section-header-box">{titulo}</div>', unsafe_allow_html=True)
 
+def remover_tags_html(texto):
+    if not texto or pd.isna(texto):
+        return ""
+    try:
+        if hasattr(texto, "get_text"):
+            texto_str = texto.get_text(strip=True)
+        else:
+            texto_str = str(texto)
+        clean = BeautifulSoup(texto_str, "html.parser").get_text(strip=True)
+        clean = re.sub(r'<[^>]*>', '', clean)
+        return clean.strip()
+    except Exception:
+        return str(texto).strip()
+
 def extrair_tabela_unica(table):
     rows = []
     for tr in table.find_all("tr"):
-        cells = [td.get_text(strip=True) for td in tr.find_all(["th", "td"])]
+        cells = [remover_tags_html(td) for td in tr.find_all(["th", "td"])]
         if cells:
             rows.append(cells)
     if not rows:
@@ -409,15 +417,15 @@ def limpar_colunas_df(df):
         return df
     
     if all(str(c).isdigit() for c in df.columns) and len(df) > 0:
-        primeira_linha = [str(val).lower() for val in df.iloc[0].values]
+        primeira_linha = [remover_tags_html(str(val)).lower() for val in df.iloc[0].values]
         if any(k in " ".join(primeira_linha) for k in ["classificação", "equipe", "clube", "j", "v", "e", "d", "gp", "gc", "p"]):
             df.columns = df.iloc[0]
             df = df.iloc[1:].reset_index(drop=True)
 
     if isinstance(df.columns, pd.MultiIndex):
-        df.columns = ['_'.join(str(c) for c in col if 'unnamed' not in str(c).lower()).strip() for col in df.columns]
+        df.columns = ['_'.join(remover_tags_html(str(c)) for c in col if 'unnamed' not in remover_tags_html(str(c)).lower()).strip() for col in df.columns]
     else:
-        df.columns = [str(c).strip() for c in df.columns]
+        df.columns = [remover_tags_html(str(c)) for c in df.columns]
     return df
 
 @st.cache_data(ttl=300)
@@ -525,7 +533,7 @@ def obter_mapeamento_escudos():
         imgs = soup.find_all("img")
         for img in imgs:
             src = img.get("src", "")
-            title = img.get("title", "") or img.get("alt", "")
+            title = remover_tags_html(img.get("title", "") or img.get("alt", ""))
             if src and title:
                 if not src.startswith("http"):
                     src = f"https://www.nossaliga.com.br{src}"
@@ -536,7 +544,7 @@ def formatar_equipe_com_escudo(nome_equipe, mapa_escudos):
     if not nome_equipe or pd.isna(nome_equipe):
         return ""
     
-    nome_clean = str(nome_equipe).strip()
+    nome_clean = remover_tags_html(nome_equipe)
     nome_lower = nome_clean.lower()
     url_escudo = ""
     
@@ -545,9 +553,10 @@ def formatar_equipe_com_escudo(nome_equipe, mapa_escudos):
             url_escudo = v
             break
 
+    nome_escaped = html.escape(nome_clean)
     if url_escudo:
-        return f'<table style="border-collapse:collapse; background:transparent; border:none; margin:0; padding:0;"><tr><td style="padding:0 6px 0 0; border:none; vertical-align:middle;"><img src="{url_escudo}" class="team-logo" /></td><td style="padding:0; border:none; vertical-align:middle; font-weight:800; color:#110888; font-size:11.5px;">{nome_clean}</td></tr></table>'
-    return f'<span style="font-weight:800; color:#110888; font-size:11.5px;">{nome_clean}</span>'
+        return f'<table style="border-collapse:collapse; background:transparent; border:none; margin:0; padding:0;"><tr><td style="padding:0 6px 0 0; border:none; vertical-align:middle;"><img src="{url_escudo}" class="team-logo" /></td><td style="padding:0; border:none; vertical-align:middle; font-weight:800; color:#110888; font-size:11.5px;">{nome_escaped}</td></tr></table>'
+    return f'<span style="font-weight:800; color:#110888; font-size:11.5px;">{nome_escaped}</span>'
 
 def formatar_tabela_classificacao_oficial(df, mapa_escudos, reatribuir_posicao=False):
     if df.empty:
@@ -561,20 +570,21 @@ def formatar_tabela_classificacao_oficial(df, mapa_escudos, reatribuir_posicao=F
             if reatribuir_posicao:
                 pos_str = f"{idx + 1}º"
             else:
-                pos = str(row.iloc[0]).strip()
+                pos = remover_tags_html(str(row.iloc[0]))
                 pos_clean = re.sub(r'[ºª°]', '', pos).strip()
                 pos_str = f"{pos_clean}º" if pos_clean.isdigit() else pos
 
-            nome_equipe = str(row.iloc[1]).strip()
+            nome_equipe = remover_tags_html(str(row.iloc[1]))
             if not nome_equipe or nome_equipe.lower() in ["none", "nan"] or nome_equipe.isdigit():
                 if len(row) > 2:
-                    nome_equipe = str(row.iloc[2]).strip()
+                    nome_equipe = remover_tags_html(str(row.iloc[2]))
 
             eq_fmt = formatar_equipe_com_escudo(nome_equipe, mapa_escudos)
+            pos_escaped = html.escape(pos_str)
 
             celula_classificacao = (
                 f'<div style="display: flex; align-items: center; gap: 6px;">'
-                f'<span style="font-weight: 800 !important; color: #110888 !important; min-width: 18px;">{pos_str}</span>'
+                f'<span style="font-weight: 800 !important; color: #110888 !important; min-width: 18px;">{pos_escaped}</span>'
                 f'{eq_fmt}'
                 f'</div>'
             )
@@ -582,7 +592,7 @@ def formatar_tabela_classificacao_oficial(df, mapa_escudos, reatribuir_posicao=F
             nova_linha = [celula_classificacao]
             valores_estatisticas = []
             for i in range(2, len(row)):
-                val = str(row.iloc[i]).strip()
+                val = html.escape(remover_tags_html(str(row.iloc[i])))
                 if val and val.lower() not in ["none", "nan"]:
                     valores_estatisticas.append(val)
 
@@ -618,7 +628,7 @@ def obter_df_jogos():
     for tr in linhas:
         tds = tr.find_all("td")
         if len(tds) >= 7:
-            textos = [td.get_text(strip=True) for td in tds]
+            textos = [remover_tags_html(td) for td in tds]
             if re.match(r"^\d+$", textos[0]):
                 jogos_dados.append({
                     "Nº Jogo": textos[0],
@@ -666,10 +676,10 @@ def obter_posicoes_santa_maria():
         target_col = col_eq[0] if col_eq else df_geral.columns[1] if len(df_geral.columns) > 1 else df_geral.columns[0]
         
         for idx, row in df_geral.iterrows():
-            if "santa maria" in str(row[target_col]).lower():
+            if "santa maria" in remover_tags_html(str(row[target_col])).lower():
                 col_pos = df_geral.columns[0]
-                val_pos = re.sub(r'[ºª°]', '', str(row[col_pos])).strip()
-                pos_geral = f"{val_pos}º" if val_pos.isdigit() else f"{row[col_pos]}º"
+                val_pos = re.sub(r'[ºª°]', '', remover_tags_html(str(row[col_pos]))).strip()
+                pos_geral = f"{val_pos}º" if val_pos.isdigit() else f"{remover_tags_html(str(row[col_pos]))}º"
                 break
 
     for df_g_grupo in [df_ga, df_gb]:
@@ -678,10 +688,10 @@ def obter_posicoes_santa_maria():
             col_eq_gp = [c for c in df_gp_limpo.columns if any(k in str(c).lower() for k in ["equipe", "clube", "times", "nome"])]
             t_col = col_eq_gp[0] if col_eq_gp else df_gp_limpo.columns[1] if len(df_gp_limpo.columns) > 1 else df_gp_limpo.columns[0]
             for idx, row in df_gp_limpo.iterrows():
-                if "santa maria" in str(row[t_col]).lower():
+                if "santa maria" in remover_tags_html(str(row[t_col])).lower():
                     col_pos = df_gp_limpo.columns[0]
-                    val_pos = re.sub(r'[ºª°]', '', str(row[col_pos])).strip()
-                    pos_grupo = f"{val_pos}º" if val_pos.isdigit() else f"{row[col_pos]}º"
+                    val_pos = re.sub(r'[ºª°]', '', remover_tags_html(str(row[col_pos]))).strip()
+                    pos_grupo = f"{val_pos}º" if val_pos.isdigit() else f"{remover_tags_html(str(row[col_pos]))}º"
                     break
         if pos_grupo != "N/I":
             break
@@ -695,10 +705,10 @@ def extrair_lista_equipes_grupo(df):
     df_l = limpar_colunas_df(df)
     for _, row in df_l.iterrows():
         if len(row) >= 2:
-            nome = str(row.iloc[1]).strip()
+            nome = remover_tags_html(str(row.iloc[1]))
             if not nome or nome.lower() in ["none", "nan"] or nome.isdigit():
                 if len(row) > 2:
-                    nome = str(row.iloc[2]).strip()
+                    nome = remover_tags_html(str(row.iloc[2]))
             if nome and nome.lower() not in ["none", "nan"]:
                 equipes.append(nome)
     return equipes
@@ -713,7 +723,7 @@ def limpar_filtro(key):
     st.session_state[key] = "Todas as Equipes"
 
 def criar_filtro_equipe(lista_equipes, key):
-    equipes_unicas = sorted([str(e).strip() for e in lista_equipes if pd.notna(e) and str(e).strip() != ""])
+    equipes_unicas = sorted([remover_tags_html(str(e)) for e in lista_equipes if pd.notna(e) and remover_tags_html(str(e)) != ""])
     opcoes = ["Todas as Equipes"] + equipes_unicas
     
     if key not in st.session_state:
@@ -849,7 +859,7 @@ if opcao == "Início":
             st.markdown(f"""
                 <div class="match-box">
                     <div style="font-size:11.5px; color:#475569; margin-bottom:8px; font-weight:600;">
-                        📅 <b>Data:</b> {prox['Data']} às {prox['Horário']} &nbsp;|&nbsp; 📍 <b>Local:</b> {prox['Local']} &nbsp;|&nbsp; 🏷️ <b>Jogo #{prox['Nº Jogo']}</b>
+                        📅 <b>Data:</b> {html.escape(str(prox['Data']))} às {html.escape(str(prox['Horário']))} &nbsp;|&nbsp; 📍 <b>Local:</b> {html.escape(str(prox['Local']))} &nbsp;|&nbsp; 🏷️ <b>Jogo #{html.escape(str(prox['Nº Jogo']))}</b>
                     </div>
                     <div style="display:flex; justify-content:space-between; align-items:center; text-align:center; gap: 2px;">
                         <div style="flex:1; min-width:0; overflow:hidden;">
@@ -892,7 +902,7 @@ if opcao == "Início":
             st.markdown(f"""
                 <div class="match-box">
                     <div style="font-size:11.5px; color:#475569; margin-bottom:8px; font-weight:600;">
-                        📅 <b>Data:</b> {ult_sm['Data']} às {ult_sm['Horário']} &nbsp;|&nbsp; 📍 <b>Local:</b> {ult_sm['Local']} &nbsp;|&nbsp; 🏷️ <b>Jogo #{ult_sm['Nº Jogo']}</b> &nbsp; {tag_status}
+                        📅 <b>Data:</b> {html.escape(str(ult_sm['Data']))} às {html.escape(str(ult_sm['Horário']))} &nbsp;|&nbsp; 📍 <b>Local:</b> {html.escape(str(ult_sm['Local']))} &nbsp;|&nbsp; 🏷️ <b>Jogo #{html.escape(str(ult_sm['Nº Jogo']))}</b> &nbsp; {tag_status}
                     </div>
                     <div style="display:flex; justify-content:space-between; align-items:center; text-align:center; gap: 2px;">
                         <div style="flex:1; min-width:0; overflow:hidden;">
@@ -900,7 +910,7 @@ if opcao == "Início":
                             <div style="font-size:9.5px; color:#94a3b8; font-weight:700; margin-top:2px;">MANDANTE</div>
                         </div>
                         <div style="padding: 0 4px; flex-shrink:0;">
-                            <span class="score-badge">{ult_sm['Placar']}</span>
+                            <span class="score-badge">{html.escape(str(ult_sm['Placar']))}</span>
                         </div>
                         <div style="flex:1; min-width:0; overflow:hidden;">
                             <div style="font-size:11.5px; font-weight:800; color:#0f172a;">{visitante_sm}</div>
@@ -922,7 +932,7 @@ if opcao == "Início":
                 ultima_data = df_realizados_geral.iloc[-1]['Data']
                 df_ultima_rodada = df_realizados_geral[df_realizados_geral['Data'] == ultima_data].copy()
                 
-                st.markdown(f"<div style='font-size: 13px; color: #110888; font-weight: 700; margin-bottom: 12px;'>📅 Data da Rodada: {ultima_data}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='font-size: 13px; color: #110888; font-weight: 700; margin-bottom: 12px;'>📅 Data da Rodada: {html.escape(str(ultima_data))}</div>", unsafe_allow_html=True)
                 
                 for _, ult in df_ultima_rodada.iterrows():
                     m_fmt = formatar_equipe_com_escudo(ult['Mandante'], mapa_escudos)
@@ -931,7 +941,7 @@ if opcao == "Início":
                     st.markdown(f"""
                         <div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; padding:8px 10px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:8px; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
                             <div style="flex:2; text-align:left; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{m_fmt}</div>
-                            <div style="flex:1; text-align:center;"><span style="background:#f1f5f9; padding:3px 6px; border-radius:4px; font-weight:800; color:#160e91; font-size:10px;">{ult['Placar']}</span></div>
+                            <div style="flex:1; text-align:center;"><span style="background:#f1f5f9; padding:3px 6px; border-radius:4px; font-weight:800; color:#160e91; font-size:10px;">{html.escape(str(ult['Placar']))}</span></div>
                             <div style="flex:2; text-align:right; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{v_fmt}</div>
                         </div>
                     """, unsafe_allow_html=True)
@@ -983,73 +993,77 @@ elif opcao == "Eliminatórias":
     
     def renderizar_card_confronto(titulo_card, num_jogo, eq_mandante, eq_visitante, sub_mandante="", sub_visitante=""):
         data, horario, local = "", "", ""
-        mandante_final = eq_mandante
-        visitante_final = eq_visitante
+        mandante_final = remover_tags_html(eq_mandante)
+        visitante_final = remover_tags_html(eq_visitante)
         
         if not df_jogos_todos.empty and num_jogo:
             jogo_dict = obter_jogo_por_numero(df_jogos_todos, num_jogo)
             if jogo_dict:
-                mandante_final = jogo_dict.get("Mandante", eq_mandante)
-                visitante_final = jogo_dict.get("Visitante", eq_visitante)
-                data = jogo_dict.get("Data", "")
-                horario = jogo_dict.get("Horário", "")
-                local = jogo_dict.get("Local", "")
+                data = remover_tags_html(jogo_dict.get("Data", ""))
+                horario = remover_tags_html(jogo_dict.get("Horário", ""))
+                local = remover_tags_html(jogo_dict.get("Local", ""))
+                m_site = remover_tags_html(jogo_dict.get("Mandante", ""))
+                v_site = remover_tags_html(jogo_dict.get("Visitante", ""))
+                if m_site and not any(k in m_site.lower() for k in ["vencedor", "perdedor", " Jogo "]):
+                    mandante_final = m_site
+                if v_site and not any(k in v_site.lower() for k in ["vencedor", "perdedor", " Jogo "]):
+                    visitante_final = v_site
             else:
-                data, horario, local = obter_detalhes_jogo_por_numero_ou_times(df_jogos_todos, num_jogo, eq_mandante, eq_visitante)
+                d, h, l = obter_detalhes_jogo_por_numero_ou_times(df_jogos_todos, num_jogo, eq_mandante, eq_visitante)
+                data, horario, local = remover_tags_html(d), remover_tags_html(h), remover_tags_html(l)
         elif not df_jogos_todos.empty:
-            data, horario, local = obter_detalhes_jogo_por_numero_ou_times(df_jogos_todos, num_jogo, eq_mandante, eq_visitante)
+            d, h, l = obter_detalhes_jogo_por_numero_ou_times(df_jogos_todos, num_jogo, eq_mandante, eq_visitante)
+            data, horario, local = remover_tags_html(d), remover_tags_html(h), remover_tags_html(l)
             
-        with st.container():
-            st.markdown(f"""
-                <div class="match-box">
-                    <div class="match-header">🏷️ {titulo_card} {f"(Jogo #{num_jogo})" if num_jogo else ""}</div>
-            """, unsafe_allow_html=True)
-            
-            if data and data.lower() not in ["none", "nan", ""]:
-                st.markdown(f"<div style='font-size:11px; color:#475569; margin-bottom:8px; font-weight:600;'>📅 <b>Data:</b> {data} às {horario} &nbsp;|&nbsp; 📍 <b>Local:</b> {local}</div>", unsafe_allow_html=True)
-            else:
-                st.markdown("<div style='font-size:11px; color:#64748b; margin-bottom:8px; font-weight:600;'>📅 <i>Data, horário e local a definir pela organização no site oficial.</i></div>", unsafe_allow_html=True)
+        mandante_clean = html.escape(remover_tags_html(mandante_final))
+        visitante_clean = html.escape(remover_tags_html(visitante_final))
+        sub_m_clean = html.escape(remover_tags_html(sub_mandante))
+        sub_v_clean = html.escape(remover_tags_html(sub_visitante))
+        titulo_clean = html.escape(remover_tags_html(titulo_card))
 
-            col_esp1, col_m, col_v, col_d, col_esp2 = st.columns([0.5, 3.0, 0.8, 3.0, 0.5])
-            
-            with col_m:
-                url_escudo_m = ""
-                for k, v in mapa_escudos.items():
-                    if k in str(mandante_final).lower() or str(mandante_final).lower() in k:
-                        url_escudo_m = v
-                        break
-                img_tag_m = f'<img src="{url_escudo_m}" class="team-logo" style="margin-left: 6px;" />' if url_escudo_m else ''
-                st.markdown(f"""
-                    <div style="display: flex; flex-direction: column; align-items: flex-end; text-align: right;">
-                        <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 800; color: #0f172a;">
-                            <span>{mandante_final}</span>
-                            {img_tag_m}
-                        </div>
-                        <div style="font-size: 9.5px; color: #94a3b8; font-weight: 700; margin-top: 2px;">{sub_mandante}</div>
-                    </div>
-                """, unsafe_allow_html=True)
+        url_escudo_m = ""
+        for k, v in mapa_escudos.items():
+            if k in mandante_clean.lower() or mandante_clean.lower() in k:
+                url_escudo_m = v
+                break
                 
-            with col_v:
-                st.markdown("<div style='text-align:center;'><span class='score-badge'>VS</span></div>", unsafe_allow_html=True)
-                
-            with col_d:
-                url_escudo_v = ""
-                for k, v in mapa_escudos.items():
-                    if k in str(visitante_final).lower() or str(visitante_final).lower() in k:
-                        url_escudo_v = v
-                        break
-                img_tag_v = f'<img src="{url_escudo_v}" class="team-logo" style="margin-right: 6px;" />' if url_escudo_v else ''
-                st.markdown(f"""
-                    <div style="display: flex; flex-direction: column; align-items: flex-start; text-align: left;">
-                        <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 800; color: #0f172a;">
-                            {img_tag_v}
-                            <span>{visitante_final}</span>
-                        </div>
-                        <div style="font-size: 9.5px; color: #94a3b8; font-weight: 700; margin-top: 2px;">{sub_visitante}</div>
-                    </div>
-                """, unsafe_allow_html=True)
-            
-            st.markdown("</div>", unsafe_allow_html=True)
+        url_escudo_v = ""
+        for k, v in mapa_escudos.items():
+            if k in visitante_clean.lower() or visitante_clean.lower() in k:
+                url_escudo_v = v
+                break
+
+        img_html_m = f'<img src="{url_escudo_m}" class="team-logo" style="margin-left: 6px;" />' if url_escudo_m else ''
+        img_html_v = f'<img src="{url_escudo_v}" class="team-logo" style="margin-right: 6px;" />' if url_escudo_v else ''
+
+        info_data_html = (
+            f'<div style="font-size:11px; color:#475569; margin-bottom:8px; font-weight:600;">📅 <b>Data:</b> {html.escape(data)} às {html.escape(horario)} &nbsp;|&nbsp; 📍 <b>Local:</b> {html.escape(local)}</div>'
+            if data and data.lower() not in ["none", "nan", ""] else
+            '<div style="font-size:11px; color:#64748b; margin-bottom:8px; font-weight:600;">📅 <i>Data, horário e local a definir pela organização no site oficial.</i></div>'
+        )
+
+        card_html = (
+            f'<div class="match-box">'
+            f'<div class="match-header">🏷️ {titulo_clean} {(f"(Jogo #{html.escape(str(num_jogo))})" if num_jogo else "")}</div>'
+            f'{info_data_html}'
+            f'<div style="display: flex; justify-content: space-between; align-items: center; text-align: center; gap: 8px;">'
+            f'<div style="flex: 1; text-align: right; display: flex; flex-direction: column; align-items: flex-end;">'
+            f'<div style="font-size: 11.5px; font-weight: 800; color: #0f172a; display: flex; align-items: center; justify-content: flex-end;">'
+            f'<span>{mandante_clean}</span>{img_html_m}'
+            f'</div>'
+            f'<div style="font-size: 9.5px; color: #94a3b8; font-weight: 700; margin-top: 2px;">{sub_m_clean}</div>'
+            f'</div>'
+            f'<div style="flex-shrink: 0; padding: 0 6px;"><span class="score-badge">VS</span></div>'
+            f'<div style="flex: 1; text-align: left; display: flex; flex-direction: column; align-items: flex-start;">'
+            f'<div style="font-size: 11.5px; font-weight: 800; color: #0f172a; display: flex; align-items: center; justify-content: flex-start;">'
+            f'{img_html_v}<span>{visitante_clean}</span>'
+            f'</div>'
+            f'<div style="font-size: 9.5px; color: #94a3b8; font-weight: 700; margin-top: 2px;">{sub_v_clean}</div>'
+            f'</div>'
+            f'</div>'
+            f'</div>'
+        )
+        st.markdown(card_html, unsafe_allow_html=True)
     
     tab_oitavas, tab_quartas, tab_semi_ouro, tab_final_ouro, tab_bronze, tab_semi_prata, tab_final_prata, tab_terceiro = st.tabs([
         "Oitavas de Final", 
@@ -1202,9 +1216,9 @@ elif opcao == "Artilharia":
             
             novas_linhas = []
             for index, row in df_art_raw.iterrows():
-                colocacao = row.iloc[0] if len(row) > 0 else (index + 1)
-                texto_misto = str(row.iloc[1]) if len(row) > 1 else ""
-                gols = row.iloc[2] if len(row) > 2 else ""
+                colocacao = remover_tags_html(str(row.iloc[0])) if len(row) > 0 else (index + 1)
+                texto_misto = remover_tags_html(str(row.iloc[1])) if len(row) > 1 else ""
+                gols = remover_tags_html(str(row.iloc[2])) if len(row) > 2 else ""
 
                 padrao_separacao = r"\b(colégio|colegio|escola|mackenzie|sport|náutico|nautico|santa cruz|cruz|america|américa|retrô|retro|flamengo|vasco|botafogo|fluminense|bahia|vitória|vitoria|ceará|ceara|fortaleza)\b"
                 match = re.search(padrao_separacao, texto_misto, re.IGNORECASE)
@@ -1508,7 +1522,7 @@ elif opcao == "Jogos Gravados":
             st.markdown(f"""
                 <div class="match-box" style="padding: 12px; text-align: center;">
                     <div class="video-title-box">
-                        ⚽ {titulo_v}
+                        ⚽ {html.escape(titulo_v)}
                     </div>
                     <div style="margin-bottom: 10px; text-align: center;">
                         🔗 <a href="{url_v}" target="_blank" style="color: #110888; font-weight: 800; text-decoration: underline; font-size: 11px;">Assistir no YouTube</a>
