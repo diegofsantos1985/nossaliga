@@ -80,6 +80,24 @@ st.markdown(
         color: #ffffff !important;
     }
 
+    /* CAIXA DE TÍTULO PARA OS VÍDEOS (FUNDO AZUL E FONTE BRANCA) */
+    .video-title-box {
+        background-color: #110888 !important;
+        color: #ffffff !important;
+        padding: 12px 14px !important;
+        border-radius: 8px !important;
+        font-size: 13px !important;
+        font-weight: 800 !important;
+        margin-bottom: 12px !important;
+        text-align: center !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
+    }
+    .video-title-box span, .video-title-box div {
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+        font-weight: 800 !important;
+    }
+
     /* Metrics Cards */
     .metric-card {
         background-color: #ffffff;
@@ -993,19 +1011,42 @@ elif opcao == "Eliminatórias":
                 st.markdown("<div style='font-size:11px; color:#64748b; margin-bottom:8px; font-weight:600;'>📅 <i>Data, horário e local a definir pela organização no site oficial.</i></div>", unsafe_allow_html=True)
 
             col_esp1, col_m, col_v, col_d, col_esp2 = st.columns([0.5, 3.0, 0.8, 3.0, 0.5])
+            
             with col_m:
-                m_fmt = formatar_equipe_com_escudo(mandante_final, mapa_escudos)
+                url_escudo_m = ""
+                for k, v in mapa_escudos.items():
+                    if k in str(mandante_final).lower() or str(mandante_final).lower() in k:
+                        url_escudo_m = v
+                        break
+                img_tag_m = f'<img src="{url_escudo_m}" class="team-logo" style="margin-left: 6px;" />' if url_escudo_m else ''
                 st.markdown(f"""
-                    <div style="font-size:11.5px; font-weight:800; color:#0f172a; text-align:right;">{m_fmt}</div>
-                    <div style="font-size:9.5px; color:#94a3b8; font-weight:700; margin-top:2px; text-align:right;">{sub_mandante}</div>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; text-align: right;">
+                        <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 800; color: #0f172a;">
+                            <span>{mandante_final}</span>
+                            {img_tag_m}
+                        </div>
+                        <div style="font-size: 9.5px; color: #94a3b8; font-weight: 700; margin-top: 2px;">{sub_mandante}</div>
+                    </div>
                 """, unsafe_allow_html=True)
+                
             with col_v:
                 st.markdown("<div style='text-align:center;'><span class='score-badge'>VS</span></div>", unsafe_allow_html=True)
+                
             with col_d:
-                v_fmt = formatar_equipe_com_escudo(visitante_final, mapa_escudos)
+                url_escudo_v = ""
+                for k, v in mapa_escudos.items():
+                    if k in str(visitante_final).lower() or str(visitante_final).lower() in k:
+                        url_escudo_v = v
+                        break
+                img_tag_v = f'<img src="{url_escudo_v}" class="team-logo" style="margin-right: 6px;" />' if url_escudo_v else ''
                 st.markdown(f"""
-                    <div style="font-size:11.5px; font-weight:800; color:#0f172a; text-align:left;">{v_fmt}</div>
-                    <div style="font-size:9.5px; color:#94a3b8; font-weight:700; margin-top:2px; text-align:left;">{sub_visitante}</div>
+                    <div style="display: flex; flex-direction: column; align-items: flex-start; text-align: left;">
+                        <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 800; color: #0f172a;">
+                            {img_tag_v}
+                            <span>{visitante_final}</span>
+                        </div>
+                        <div style="font-size: 9.5px; color: #94a3b8; font-weight: 700; margin-top: 2px;">{sub_visitante}</div>
+                    </div>
                 """, unsafe_allow_html=True)
             
             st.markdown("</div>", unsafe_allow_html=True)
@@ -1453,12 +1494,11 @@ elif opcao == "Jogos Gravados":
     renderizar_cabecalho_secao("📺 Jogos Gravados e Transmissões — Sub-13 Masculino")
     
     st.markdown("### 🔴 Partidas Gravadas")
-    st.markdown("*(Nota: Ordenadas cronologicamente do mais antigo para o mais recente).*")
     
     videos_gravados = [
-        ("Santa Maria x Visão (Mais Antigo)", "https://www.youtube.com/watch?v=_poW1993bDE"),
+        ("Santa Maria x Visão", "https://www.youtube.com/watch?v=_poW1993bDE"),
         ("Santa Maria x Apoio", "https://www.youtube.com/watch?v=IWydiKQdSvA&t=1062s"),
-        ("Santa Maria x São Luiz (Mais Recente)", "https://www.youtube.com/watch?v=gaxXctACWH4")
+        ("Santa Maria x São Luiz", "https://www.youtube.com/watch?v=gaxXctACWH4")
     ]
     
     cols_videos = st.columns(3)
@@ -1467,7 +1507,7 @@ elif opcao == "Jogos Gravados":
         with cols_videos[idx]:
             st.markdown(f"""
                 <div class="match-box" style="padding: 12px; text-align: center;">
-                    <div style="font-size: 13px; font-weight: 800; color: #110888 !important; margin-bottom: 10px;">
+                    <div class="video-title-box">
                         ⚽ {titulo_v}
                     </div>
                     <div style="margin-bottom: 10px; text-align: center;">
