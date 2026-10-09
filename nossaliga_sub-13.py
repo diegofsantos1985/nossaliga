@@ -613,6 +613,16 @@ def obter_df_jogos():
                 })
     return pd.DataFrame(jogos_dados)
 
+def obter_jogo_por_numero(df_jogos, num_jogo_str):
+    if df_jogos.empty or not num_jogo_str:
+        return None
+    num_limpo = re.sub(r'\D', '', str(num_jogo_str))
+    if num_limpo:
+        match_row = df_jogos[df_jogos["Nº Jogo"].astype(str).str.strip() == num_limpo]
+        if not match_row.empty:
+            return match_row.iloc[0].to_dict()
+    return None
+
 def obter_detalhes_jogo_por_numero_ou_times(df_jogos, num_jogo_str=None, eq1=None, eq2=None):
     if df_jogos.empty:
         return "", "", ""
@@ -625,17 +635,6 @@ def obter_detalhes_jogo_por_numero_ou_times(df_jogos, num_jogo_str=None, eq1=Non
                 r = match_row.iloc[0]
                 return r.get("Data", ""), r.get("Horário", ""), r.get("Local", "")
                 
-    if eq1 and eq2 and not any(k in str(eq1).lower() for k in ["grupo", "vencedor", "perdedor"]) and not any(k in str(eq2).lower() for k in ["grupo", "vencedor", "perdedor"]):
-        match_row = df_jogos[
-            ((df_jogos["Mandante"].str.strip().str.lower() == str(eq1).strip().lower()) & 
-             (df_jogos["Visitante"].str.strip().str.lower() == str(eq2).strip().lower())) |
-            ((df_jogos["Mandante"].str.strip().str.lower() == str(eq2).strip().lower()) & 
-             (df_jogos["Visitante"].str.strip().str.lower() == str(eq1).strip().lower()))
-        ]
-        if not match_row.empty:
-            r = match_row.iloc[0]
-            return r.get("Data", ""), r.get("Horário", ""), r.get("Local", "")
-            
     return "", "", ""
 
 def obter_posicoes_santa_maria():
@@ -966,7 +965,20 @@ elif opcao == "Eliminatórias":
     
     def renderizar_card_confronto(titulo_card, num_jogo, eq_mandante, eq_visitante, sub_mandante="", sub_visitante=""):
         data, horario, local = "", "", ""
-        if not df_jogos_todos.empty:
+        mandante_final = eq_mandante
+        visitante_final = eq_visitante
+        
+        if not df_jogos_todos.empty and num_jogo:
+            jogo_dict = obter_jogo_por_numero(df_jogos_todos, num_jogo)
+            if jogo_dict:
+                mandante_final = jogo_dict.get("Mandante", eq_mandante)
+                visitante_final = jogo_dict.get("Visitante", eq_visitante)
+                data = jogo_dict.get("Data", "")
+                horario = jogo_dict.get("Horário", "")
+                local = jogo_dict.get("Local", "")
+            else:
+                data, horario, local = obter_detalhes_jogo_por_numero_ou_times(df_jogos_todos, num_jogo, eq_mandante, eq_visitante)
+        elif not df_jogos_todos.empty:
             data, horario, local = obter_detalhes_jogo_por_numero_ou_times(df_jogos_todos, num_jogo, eq_mandante, eq_visitante)
             
         with st.container():
@@ -982,7 +994,7 @@ elif opcao == "Eliminatórias":
 
             col_esp1, col_m, col_v, col_d, col_esp2 = st.columns([0.5, 3.0, 0.8, 3.0, 0.5])
             with col_m:
-                m_fmt = formatar_equipe_com_escudo(eq_mandante, mapa_escudos)
+                m_fmt = formatar_equipe_com_escudo(mandante_final, mapa_escudos)
                 st.markdown(f"""
                     <div style="font-size:11.5px; font-weight:800; color:#0f172a; text-align:right;">{m_fmt}</div>
                     <div style="font-size:9.5px; color:#94a3b8; font-weight:700; margin-top:2px; text-align:right;">{sub_mandante}</div>
@@ -990,7 +1002,7 @@ elif opcao == "Eliminatórias":
             with col_v:
                 st.markdown("<div style='text-align:center;'><span class='score-badge'>VS</span></div>", unsafe_allow_html=True)
             with col_d:
-                v_fmt = formatar_equipe_com_escudo(eq_visitante, mapa_escudos)
+                v_fmt = formatar_equipe_com_escudo(visitante_final, mapa_escudos)
                 st.markdown(f"""
                     <div style="font-size:11.5px; font-weight:800; color:#0f172a; text-align:left;">{v_fmt}</div>
                     <div style="font-size:9.5px; color:#94a3b8; font-weight:700; margin-top:2px; text-align:left;">{sub_visitante}</div>
@@ -1015,19 +1027,25 @@ elif opcao == "Eliminatórias":
         
         with col_ga:
             st.markdown("#### 🅰️ Grupo A")
-            pairs_a = [(0, 7, 1, 8), (1, 6, 2, 7), (2, 5, 3, 6), (3, 4, 4, 5)]
-            for idx, (i1, i2, p1, p2) in enumerate(pairs_a):
-                t1 = eqs_ga[i1] if i1 < len(eqs_ga) else f"{p1}º Grupo A"
-                t2 = eqs_ga[i2] if i2 < len(eqs_ga) else f"{p2}º Grupo A"
-                renderizar_card_confronto(f"{idx+1}ª Oitavas de Final (Grupo A)", None, t1, t2, f"{p1}º Colocado", f"{p2}º Colocado")
+            oitavas_ga = [
+                ("1ª Oitavas de Final (Grupo A)", "210", "Colégio GGE", "Colégio GGE B", "1º Colocado", "8º Colocado"),
+                ("2ª Oitavas de Final (Grupo A)", "211", "Escola Bem-Me-Quer", "Colégio Damas", "2º Colocado", "7º Colocado"),
+                ("3ª Oitavas de Final (Grupo A)", "212", "Escola Americana do Recife", "Colégio Piedade", "3º Colocado", "6º Colocado"),
+                ("4ª Oitavas de Final (Grupo A)", "213", "Colégio Santa Maria", "Colégio Decisão", "4º Colocado", "5º Colocado"),
+            ]
+            for titulo, num_j, t1_def, t2_def, sub1, sub2 in oitavas_ga:
+                renderizar_card_confronto(titulo, num_j, t1_def, t2_def, sub1, sub2)
 
         with col_gb:
             st.markdown("#### 🅱️ Grupo B")
-            pairs_b = [(0, 7, 1, 8), (1, 6, 2, 7), (2, 5, 3, 6), (3, 4, 4, 5)]
-            for idx, (i1, i2, p1, p2) in enumerate(pairs_b):
-                t1 = eqs_gb[i1] if i1 < len(eqs_gb) else f"{p1}º Grupo B"
-                t2 = eqs_gb[i2] if i2 < len(eqs_gb) else f"{p2}º Grupo B"
-                renderizar_card_confronto(f"{idx+5}ª Oitavas de Final (Grupo B)", None, t1, t2, f"{p1}º Colocado", f"{p2}º Colocado")
+            oitavas_gb = [
+                ("5ª Oitavas de Final (Grupo B)", "214", "Colégio Marista São Luis", "Colégio Eximius", "1º Colocado", "8º Colocado"),
+                ("6ª Oitavas de Final (Grupo B)", "215", "Colégio Núcleo", "Colégio Cognitivo", "2º Colocado", "7º Colocado"),
+                ("7ª Oitavas de Final (Grupo B)", "216", "Colégio Apoio", "Colégio Grande Passo", "3º Colocado", "6º Colocado"),
+                ("8ª Oitavas de Final (Grupo B)", "217", "Mackenzie Agnes", "Colégio São José - Abreu e Lima", "4º Colocado", "5º Colocado"),
+            ]
+            for titulo, num_j, t1_def, t2_def, sub1, sub2 in oitavas_gb:
+                renderizar_card_confronto(titulo, num_j, t1_def, t2_def, sub1, sub2)
                 
     with tab_quartas:
         st.markdown("### ⚔️ Quartas de Final")
@@ -1055,13 +1073,17 @@ elif opcao == "Eliminatórias":
             st.markdown("#### 🅰️ Grupo A")
             jogos_bronze_a = [
                 ("1º Jogo Mata-Mata Bronze", "218", "Perdedor do Jogo 210", 13, eqs_ga, "14º Grupo A"),
+                ("6º Jogo Mata-Mata Bronze", "223", "Colégio ELO Cordeiro", "Colégio Equipe", "Equipe A", "Equipe B"), # Atualizado conforme imagem oficial
                 ("9º Jogo Mata-Mata Bronze", "226", "Perdedor do Jogo 211", 12, eqs_ga, "13º Grupo A"),
                 ("8º Jogo Mata-Mata Bronze", "225", "Perdedor do Jogo 212", 11, eqs_ga, "12º Grupo A"),
                 ("7º Jogo Mata-Mata Bronze", "224", "Perdedor do Jogo 213", 10, eqs_ga, "11º Grupo A"),
             ]
             for titulo_j, num_jogo, desc_perdedor, idx_eq, lista_eqs, fallback_pos in jogos_bronze_a:
-                t_equipe = lista_eqs[idx_eq] if idx_eq < len(lista_eqs) else fallback_pos
-                renderizar_card_confronto(f"{titulo_j}", num_jogo, desc_perdedor, t_equipe, "Origem", fallback_pos)
+                if num_jogo == "223":
+                    renderizar_card_confronto(titulo_j, num_jogo, "Colégio ELO Cordeiro", "Colégio Equipe", "Mandante", "Visitante")
+                else:
+                    t_equipe = lista_eqs[idx_eq] if idx_eq < len(lista_eqs) else fallback_pos
+                    renderizar_card_confronto(f"{titulo_j}", num_jogo, desc_perdedor, t_equipe, "Origem", fallback_pos)
 
         with col_bronze_b:
             st.markdown("#### 🅱️ Grupo B")
@@ -1433,14 +1455,12 @@ elif opcao == "Jogos Gravados":
     st.markdown("### 🔴 Partidas Gravadas")
     st.markdown("*(Nota: Ordenadas cronologicamente do mais antigo para o mais recente).*")
     
-    # Ordenado do mais antigo para o mais recente com os confrontos especificados
     videos_gravados = [
         ("Santa Maria x Visão (Mais Antigo)", "https://www.youtube.com/watch?v=_poW1993bDE"),
         ("Santa Maria x Apoio", "https://www.youtube.com/watch?v=IWydiKQdSvA&t=1062s"),
         ("Santa Maria x São Luiz (Mais Recente)", "https://www.youtube.com/watch?v=gaxXctACWH4")
     ]
     
-    # Renderização em 3 colunas menores lado a lado
     cols_videos = st.columns(3)
     
     for idx, (titulo_v, url_v) in enumerate(videos_gravados):
