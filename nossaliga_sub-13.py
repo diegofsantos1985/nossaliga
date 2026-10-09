@@ -1073,7 +1073,7 @@ elif opcao == "Eliminatórias":
             st.markdown("#### 🅰️ Grupo A")
             jogos_bronze_a = [
                 ("1º Jogo Mata-Mata Bronze", "218", "Perdedor do Jogo 210", 13, eqs_ga, "14º Grupo A"),
-                ("6º Jogo Mata-Mata Bronze", "223", "Colégio ELO Cordeiro", "Colégio Equipe", "Equipe A", "Equipe B"), # Atualizado conforme imagem oficial
+                ("6º Jogo Mata-Mata Bronze", "223", "Colégio ELO Cordeiro", "Colégio Equipe", "Equipe A", "Equipe B"),
                 ("9º Jogo Mata-Mata Bronze", "226", "Perdedor do Jogo 211", 12, eqs_ga, "13º Grupo A"),
                 ("8º Jogo Mata-Mata Bronze", "225", "Perdedor do Jogo 212", 11, eqs_ga, "12º Grupo A"),
                 ("7º Jogo Mata-Mata Bronze", "224", "Perdedor do Jogo 213", 10, eqs_ga, "11º Grupo A"),
@@ -1465,8 +1465,16 @@ elif opcao == "Jogos Gravados":
     
     for idx, (titulo_v, url_v) in enumerate(videos_gravados):
         with cols_videos[idx]:
-            st.markdown(f"**⚽ {titulo_v}**")
-            st.markdown(f"🔗 [Abrir no YouTube]({url_v})")
+            st.markdown(f"""
+                <div class="match-box" style="padding: 10px;">
+                    <div style="background-color: #110888 !important; color: #ffffff !important; padding: 10px 14px !important; border-radius: 8px !important; font-size: 13px !important; font-weight: 800 !important; margin-bottom: 10px !important; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;">
+                        ⚽ {titulo_v}
+                    </div>
+                    <div style="margin-bottom: 10px; text-align: center;">
+                        🔗 <a href="{url_v}" target="_blank" style="color: #110888; font-weight: 800; text-decoration: underline; font-size: 11px;">Assistir no YouTube</a>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
             try:
                 st.video(url_v)
             except Exception:
