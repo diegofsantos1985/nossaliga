@@ -528,8 +528,8 @@ def formatar_equipe_com_escudo(nome_equipe, mapa_escudos):
             break
 
     if url_escudo:
-        return f'<span class="team-cell"><img src="{url_escudo}" class="team-logo" /><span>{nome_clean}</span></span>'
-    return f'<span>{nome_clean}</span>'
+        return f'<table style="border-collapse:collapse; background:transparent; border:none; margin:0; padding:0;"><tr><td style="padding:0 6px 0 0; border:none; vertical-align:middle;"><img src="{url_escudo}" class="team-logo" /></td><td style="padding:0; border:none; vertical-align:middle; font-weight:800; color:#110888; font-size:11.5px;">{nome_clean}</td></tr></table>'
+    return f'<span style="font-weight:800; color:#110888; font-size:11.5px;">{nome_clean}</span>'
 
 def formatar_tabela_classificacao_oficial(df, mapa_escudos, reatribuir_posicao=False):
     if df.empty:
@@ -1466,8 +1466,8 @@ elif opcao == "Jogos Gravados":
     for idx, (titulo_v, url_v) in enumerate(videos_gravados):
         with cols_videos[idx]:
             st.markdown(f"""
-                <div class="match-box" style="padding: 10px;">
-                    <div style="background-color: #110888 !important; color: #ffffff !important; padding: 10px 14px !important; border-radius: 8px !important; font-size: 13px !important; font-weight: 800 !important; margin-bottom: 10px !important; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;">
+                <div class="match-box" style="padding: 12px; text-align: center;">
+                    <div style="font-size: 13px; font-weight: 800; color: #110888 !important; margin-bottom: 10px;">
                         ⚽ {titulo_v}
                     </div>
                     <div style="margin-bottom: 10px; text-align: center;">
