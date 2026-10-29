@@ -680,9 +680,9 @@ def resolver_equipe_jogo(df_jogos, num_jogo, tipo="vencedor", fallback=""):
         pass
     return fallback
 
-def obter_detalhes_jogo_por_numero_ou_times(df_jogos, num_jogo_str=None, eq1=None, eq2=None):
+def obter_dados_jogo_por_times_ou_numero(df_jogos, num_jogo_str=None, eq_mandante="", eq_visitante=""):
     if df_jogos.empty:
-        return "", "", ""
+        return "", "", "", "VS"
     
     if num_jogo_str:
         num_limpo = re.sub(r'\D', '', str(num_jogo_str))
@@ -690,9 +690,23 @@ def obter_detalhes_jogo_por_numero_ou_times(df_jogos, num_jogo_str=None, eq1=Non
             match_row = df_jogos[df_jogos["Nº Jogo"].astype(str).str.strip() == num_limpo]
             if not match_row.empty:
                 r = match_row.iloc[0]
-                return r.get("Data", ""), r.get("Horário", ""), r.get("Local", "")
-                
-    return "", "", ""
+                p = remover_tags_html(r.get("Placar", ""))
+                placar_val = p if p and re.search(r'\d', p) else "VS"
+                return r.get("Data", ""), r.get("Horário", ""), r.get("Local", ""), placar_val
+
+    if eq_mandante and eq_visitante and not any(k in str(eq_mandante).lower() for k in ["vencedor", "perdedor", " jogo "]) and not any(k in str(eq_visitante).lower() for k in ["vencedor", "perdedor", " jogo "]):
+        m_low = remover_tags_html(eq_mandante).lower()
+        v_low = remover_tags_html(eq_visitante).lower()
+        
+        for _, r in df_jogos.iterrows():
+            rm = remover_tags_html(r.get("Mandante", "")).lower()
+            rv = remover_tags_html(r.get("Visitante", "")).lower()
+            if (m_low in rm or rm in m_low) and (v_low in rv or rv in v_low):
+                p = remover_tags_html(r.get("Placar", ""))
+                placar_val = p if p and re.search(r'\d', p) else "VS"
+                return r.get("Data", ""), r.get("Horário", ""), r.get("Local", ""), placar_val
+
+    return "", "", "", "VS"
 
 def obter_posicoes_santa_maria():
     pos_geral = "N/I"
@@ -1021,35 +1035,23 @@ elif opcao == "Eliminatórias":
     df_jogos_todos = obter_df_jogos()
     
     def renderizar_card_confronto(titulo_card, num_jogo, eq_mandante, eq_visitante, sub_mandante="", sub_visitante=""):
-        data, horario, local, placar = "", "", "", "VS"
         mandante_final = remover_tags_html(eq_mandante)
         visitante_final = remover_tags_html(eq_visitante)
         
         if not df_jogos_todos.empty and num_jogo:
             jogo_dict = obter_jogo_por_numero(df_jogos_todos, num_jogo)
             if jogo_dict:
-                data = remover_tags_html(jogo_dict.get("Data", ""))
-                horario = remover_tags_html(jogo_dict.get("Horário", ""))
-                local = remover_tags_html(jogo_dict.get("Local", ""))
-                p_site = remover_tags_html(jogo_dict.get("Placar", ""))
-                if p_site and re.search(r'\d', p_site):
-                    placar = p_site
-                
                 m_site = remover_tags_html(jogo_dict.get("Mandante", ""))
                 v_site = remover_tags_html(jogo_dict.get("Visitante", ""))
-                if m_site and not any(k in m_site.lower() for k in ["vencedor", "perdedor", " Jogo "]):
+                if m_site and not any(k in m_site.lower() for k in ["vencedor", "perdedor", " jogo "]):
                     mandante_final = m_site
-                if v_site and not any(k in v_site.lower() for k in ["vencedor", "perdedor", " Jogo "]):
+                if v_site and not any(k in v_site.lower() for k in ["vencedor", "perdedor", " jogo "]):
                     visitante_final = v_site
-            else:
-                d, h, l = obter_detalhes_jogo_por_numero_ou_times(df_jogos_todos, num_jogo, eq_mandante, eq_visitante)
-                data, horario, local = remover_tags_html(d), remover_tags_html(h), remover_tags_html(l)
-        elif not df_jogos_todos.empty:
-            d, h, l = obter_detalhes_jogo_por_numero_ou_times(df_jogos_todos, num_jogo, eq_mandante, eq_visitante)
-            data, horario, local = remover_tags_html(d), remover_tags_html(h), remover_tags_html(l)
+
+        data, horario, local, placar = obter_dados_jogo_por_times_ou_numero(df_jogos_todos, num_jogo, mandante_final, visitante_final)
             
-        mandante_clean = html.escape(remover_tags_html(mandante_final))
-        visitante_clean = html.escape(remover_tags_html(visitante_final))
+        mandante_clean = html.escape(mandante_final)
+        visitante_clean = html.escape(visitante_final)
         sub_m_clean = html.escape(remover_tags_html(sub_mandante))
         sub_v_clean = html.escape(remover_tags_html(sub_visitante))
         titulo_clean = html.escape(remover_tags_html(titulo_card))
@@ -1099,12 +1101,13 @@ elif opcao == "Eliminatórias":
         )
         st.markdown(card_html, unsafe_allow_html=True)
     
-    tab_oitavas, tab_quartas, tab_semi_ouro, tab_final_ouro, tab_bronze, tab_semi_prata, tab_final_prata, tab_terceiro = st.tabs([
+    tab_oitavas, tab_quartas, tab_semi_ouro, tab_final_ouro, tab_mata_mata_bronze, tab_chaveamento_bronze, tab_semi_prata, tab_final_prata, tab_terceiro = st.tabs([
         "Oitavas de Final", 
         "Quartas de Final", 
         "Semi-Final Ouro", 
         "Final Ouro", 
         "Mata-Mata Bronze", 
+        "Chaveamento Bronze", 
         "Semi-Final Prata", 
         "Final Prata", 
         "Disputa Terceiro Lugar"
@@ -1139,71 +1142,60 @@ elif opcao == "Eliminatórias":
     with tab_quartas:
         st.markdown("### ⚔️ Quartas de Final")
         
-        venc_210 = resolver_equipe_jogo(df_jogos_todos, "210", "vencedor", "Vencedor (1º vs 8º GA)")
-        venc_213 = resolver_equipe_jogo(df_jogos_todos, "213", "vencedor", "Vencedor (4º vs 5º GA)")
-        venc_211 = resolver_equipe_jogo(df_jogos_todos, "211", "vencedor", "Vencedor (2º vs 7º GA)")
-        venc_212 = resolver_equipe_jogo(df_jogos_todos, "212", "vencedor", "Vencedor (3º vs 6º GA)")
-        venc_214 = resolver_equipe_jogo(df_jogos_todos, "214", "vencedor", "Vencedor (1º vs 8º GB)")
-        venc_217 = resolver_equipe_jogo(df_jogos_todos, "217", "vencedor", "Vencedor (4º vs 5º GB)")
-        venc_215 = resolver_equipe_jogo(df_jogos_todos, "215", "vencedor", "Vencedor (2º vs 7º GB)")
-        venc_216 = resolver_equipe_jogo(df_jogos_todos, "216", "vencedor", "Vencedor (3º vs 6º GB)")
+        venc_210 = resolver_equipe_jogo(df_jogos_todos, "210", "vencedor", "Colégio GGE")
+        venc_213 = resolver_equipe_jogo(df_jogos_todos, "213", "vencedor", "Colégio Santa Maria")
+        venc_211 = resolver_equipe_jogo(df_jogos_todos, "211", "vencedor", "Escola Bem-Me-Quer")
+        venc_212 = resolver_equipe_jogo(df_jogos_todos, "212", "vencedor", "Colégio Piedade")
+        venc_214 = resolver_equipe_jogo(df_jogos_todos, "214", "vencedor", "Colégio Marista São Luis")
+        venc_217 = resolver_equipe_jogo(df_jogos_todos, "217", "vencedor", "Colégio São José - Abreu e Lima")
+        venc_215 = resolver_equipe_jogo(df_jogos_todos, "215", "vencedor", "Colégio Núcleo")
+        venc_216 = resolver_equipe_jogo(df_jogos_todos, "216", "vencedor", "Colégio Apoio")
 
-        renderizar_card_confronto("1ª Quartas de Final", None, venc_210, venc_213, "Confronto A", "Confronto A")
-        renderizar_card_confronto("2ª Quartas de Final", None, venc_211, venc_212, "Confronto A", "Confronto A")
-        renderizar_card_confronto("3ª Quartas de Final", None, venc_214, venc_217, "Confronto B", "Confronto B")
-        renderizar_card_confronto("4ª Quartas de Final", None, venc_215, venc_216, "Confronto B", "Confronto B")
+        renderizar_card_confronto("Quartas de Final - Jogo 228", "228", venc_210, venc_213, "Vencedor Jogo 210", "Vencedor Jogo 213")
+        renderizar_card_confronto("Quartas de Final - Jogo 229", "229", venc_211, venc_212, "Vencedor Jogo 211", "Vencedor Jogo 212")
+        renderizar_card_confronto("Quartas de Final - Jogo 230", "230", venc_214, venc_217, "Vencedor Jogo 214", "Vencedor Jogo 217")
+        renderizar_card_confronto("Quartas de Final - Jogo 231", "231", venc_215, venc_216, "Vencedor Jogo 215", "Vencedor Jogo 216")
         
     with tab_semi_ouro:
         st.markdown("### ⚔️ Semi-Final Ouro")
-        renderizar_card_confronto("1ª Semi-Final Ouro", None, "Vencedor 1ª Quartas", "Vencedor 2ª Quartas", "Semifinalista", "Semifinalista")
-        renderizar_card_confronto("2ª Semi-Final Ouro", None, "Vencedor 3ª Quartas", "Vencedor 4ª Quartas", "Semifinalista", "Semifinalista")
+        renderizar_card_confronto("1ª Semi-Final Ouro", None, "Vencedor Jogo 228", "Vencedor Jogo 229", "Semifinalista", "Semifinalista")
+        renderizar_card_confronto("2ª Semi-Final Ouro", None, "Vencedor Jogo 230", "Vencedor Jogo 231", "Semifinalista", "Semifinalista")
         
     with tab_final_ouro:
         st.markdown("### 🏆 Final Ouro")
         renderizar_card_confronto("Grande Final Ouro", None, "Vencedor Semi 1 Ouro", "Vencedor Semi 2 Ouro", "Finalista", "Finalista")
         
-    with tab_bronze:
+    with tab_mata_mata_bronze:
         st.markdown("### 🥉 Mata-Mata Bronze")
-        st.markdown("Confrontos eliminatórios do Chaveamento Bronze divididos por Grupo:")
+        st.markdown("Confrontos interligados diretamente com o site oficial (atualização automática via Nº do Jogo):")
         
-        col_bronze_a, col_bronze_b = st.columns(2)
+        renderizar_card_confronto("Mata-Mata Bronze", "227", "Colégio Visão", "Colégio Motivo Boa Viagem", "9º Grupo B", "10º Grupo B")
+        renderizar_card_confronto("Mata-Mata Bronze", "225", "Escola Americana do Recife", "Colégio Casa Forte", "Perdedor do Jogo 212", "12º Grupo A")
+        renderizar_card_confronto("Mata-Mata Bronze", "222", "Colégio Eximius", "Colégio Santa Maria B", "Perdedor do Jogo 214", "14º Grupo B")
+        renderizar_card_confronto("Mata-Mata Bronze", "221", "Colégio Cognitivo", "Mackenzie Agnes B", "Perdedor do Jogo 215", "13º Grupo B")
+        renderizar_card_confronto("Mata-Mata Bronze", "223", "Colégio ELO Cordeiro", "Colégio Equipe", "9º Grupo A", "10º Grupo A")
+        renderizar_card_confronto("Mata-Mata Bronze", "220", "Colegio Grande Passo", "Escola Eleva Recife", "Perdedor do Jogo 216", "12º Grupo B")
+        renderizar_card_confronto("Mata-Mata Bronze", "226", "Colégio Damas", "CBV Jaqueira", "Perdedor do Jogo 211", "13º Grupo A")
+        renderizar_card_confronto("Mata-Mata Bronze", "224", "Colégio Decisão", "Colégio ELO Boa Viagem", "Perdedor do Jogo 213", "11º Grupo A")
+        renderizar_card_confronto("Mata-Mata Bronze", "219", "Mackenzie Agnes", "Colégio GGE C", "Perdedor do Jogo 217", "11º Grupo B")
+
+    with tab_chaveamento_bronze:
+        st.markdown("### 🥉 Chaveamento Bronze")
+        st.markdown("Confrontos interligados por grupos oficiais (atualização automática via Nº do Jogo):")
         
-        with col_bronze_a:
-            st.markdown("#### 🅰️ Grupo A")
-            
-            perd_210 = resolver_equipe_jogo(df_jogos_todos, "210", "perdedor", "Perdedor do Jogo 210")
-            perd_211 = resolver_equipe_jogo(df_jogos_todos, "211", "perdedor", "Perdedor do Jogo 211")
-            perd_212 = resolver_equipe_jogo(df_jogos_todos, "212", "perdedor", "Perdedor do Jogo 212")
-            perd_213 = resolver_equipe_jogo(df_jogos_todos, "213", "perdedor", "Perdedor do Jogo 213")
-
-            t_eq_ga_14 = eqs_ga[13] if 13 < len(eqs_ga) else "14º Grupo A"
-            t_eq_ga_13 = eqs_ga[12] if 12 < len(eqs_ga) else "13º Grupo A"
-            t_eq_ga_12 = eqs_ga[11] if 11 < len(eqs_ga) else "12º Grupo A"
-            t_eq_ga_11 = eqs_ga[10] if 10 < len(eqs_ga) else "11º Grupo A"
-
-            renderizar_card_confronto("1º Jogo Mata-Mata Bronze", "218", perd_210, t_eq_ga_14, "Origem", "14º Grupo A")
-            renderizar_card_confronto("6º Jogo Mata-Mata Bronze", "223", "Colégio ELO Cordeiro", "Colégio Equipe", "Mandante", "Visitante")
-            renderizar_card_confronto("9º Jogo Mata-Mata Bronze", "226", perd_211, t_eq_ga_13, "Origem", "13º Grupo A")
-            renderizar_card_confronto("8º Jogo Mata-Mata Bronze", "225", perd_212, t_eq_ga_12, "Origem", "12º Grupo A")
-            renderizar_card_confronto("7º Jogo Mata-Mata Bronze", "224", perd_213, t_eq_ga_11, "Origem", "11º Grupo A")
-
-        with col_bronze_b:
-            st.markdown("#### 🅱️ Grupo B")
-            
-            perd_214 = resolver_equipe_jogo(df_jogos_todos, "214", "perdedor", "Perdedor do Jogo 214")
-            perd_215 = resolver_equipe_jogo(df_jogos_todos, "215", "perdedor", "Perdedor do Jogo 215")
-            perd_216 = resolver_equipe_jogo(df_jogos_todos, "216", "perdedor", "Perdedor do Jogo 216")
-            perd_217 = resolver_equipe_jogo(df_jogos_todos, "217", "perdedor", "Perdedor do Jogo 217")
-
-            t_eq_gb_14 = eqs_gb[13] if 13 < len(eqs_gb) else "14º Grupo B"
-            t_eq_gb_13 = eqs_gb[12] if 12 < len(eqs_gb) else "13º Grupo B"
-            t_eq_gb_12 = eqs_gb[11] if 11 < len(eqs_gb) else "12º Grupo B"
-            t_eq_gb_11 = eqs_gb[10] if 10 < len(eqs_gb) else "11º Grupo B"
-
-            renderizar_card_confronto("Mata-Mata Bronze — Grupo B", "219", perd_214, t_eq_gb_14, "Origem", "14º Grupo B")
-            renderizar_card_confronto("Mata-Mata Bronze — Grupo B", "227", perd_215, t_eq_gb_13, "Origem", "13º Grupo B")
-            renderizar_card_confronto("Mata-Mata Bronze — Grupo B", "228", perd_216, t_eq_gb_12, "Origem", "12º Grupo B")
-            renderizar_card_confronto("Mata-Mata Bronze — Grupo B", "229", perd_217, t_eq_gb_11, "Origem", "11º Grupo B")
+        st.markdown("#### 🔹 Grupo Y")
+        renderizar_card_confronto("Grupo Y", "233", "Colégio GGE B", "Colegio Grande Passo", "Mandante", "Visitante")
+        
+        st.markdown("#### 🔹 Grupo Z")
+        renderizar_card_confronto("Grupo Z", "237", "Colégio Eximius", "Mackenzie Agnes B", "Mandante", "Visitante")
+        
+        st.markdown("#### 🔹 Grupo 10")
+        renderizar_card_confronto("Grupo 10", "239", "Colégio ELO Cordeiro", "Escola Americana do Recife", "Mandante", "Visitante")
+        renderizar_card_confronto("Grupo 10", "240", "Vencedor do Jogo 224", "Colégio ELO Cordeiro", "Mandante", "Visitante")
+        renderizar_card_confronto("Grupo 10", "238", "Escola Americana do Recife", "Vencedor do Jogo 224", "Mandante", "Visitante")
+        
+        st.markdown("#### 🔹 Grupo 11")
+        renderizar_card_confronto("Grupo 11", "243", "Colégio Damas", "Colégio Visão", "Mandante", "Visitante")
         
     with tab_semi_prata:
         st.markdown("### 🥈 Semi-Final Prata")
@@ -1565,24 +1557,27 @@ elif opcao == "Jogos Gravados":
     videos_gravados = [
         ("Santa Maria x Visão", "https://www.youtube.com/watch?v=_poW1993bDE"),
         ("Santa Maria x Apoio", "https://www.youtube.com/watch?v=IWydiKQdSvA&t=1062s"),
-        ("Santa Maria x São Luiz", "https://www.youtube.com/watch?v=gaxXctACWH4")
+        ("Santa Maria x São Luiz", "https://www.youtube.com/watch?v=gaxXctACWH4"),
+        ("Santa Maria A x Decisão - Oitavas de Final", "https://www.youtube.com/watch?v=PuhQLJOQRZw")
     ]
     
-    cols_videos = st.columns(3)
-    
-    for idx, (titulo_v, url_v) in enumerate(videos_gravados):
-        with cols_videos[idx]:
-            st.markdown(f"""
-                <div class="match-box" style="padding: 12px; text-align: center;">
-                    <div class="video-title-box">
-                        ⚽ {html.escape(titulo_v)}
-                    </div>
-                    <div style="margin-bottom: 10px; text-align: center;">
-                        🔗 <a href="{url_v}" target="_blank" style="color: #110888; font-weight: 800; text-decoration: underline; font-size: 11.5px;">Assistir no YouTube</a>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-            try:
-                st.video(url_v)
-            except Exception:
-                st.warning("Player indisponível.")
+    for i in range(0, len(videos_gravados), 2):
+        cols = st.columns(2)
+        for j in range(2):
+            if i + j < len(videos_gravados):
+                titulo_v, url_v = videos_gravados[i + j]
+                with cols[j]:
+                    st.markdown(f"""
+                        <div class="match-box" style="padding: 12px; text-align: center;">
+                            <div class="video-title-box">
+                                ⚽ {html.escape(titulo_v)}
+                            </div>
+                            <div style="margin-bottom: 10px; text-align: center;">
+                                🔗 <a href="{url_v}" target="_blank" style="color: #110888; font-weight: 800; text-decoration: underline; font-size: 11px;">Assistir no YouTube</a>
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    try:
+                        st.video(url_v)
+                    except Exception:
+                        st.warning("Player indisponível.")
