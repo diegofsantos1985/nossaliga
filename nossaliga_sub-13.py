@@ -1141,12 +1141,16 @@ elif opcao == "Eliminatórias":
         
     with tab_semi_ouro:
         st.markdown("### ⚔️ Semi-Final Ouro")
-        renderizar_card_confronto("Semi-Final Ouro - Jogo 245", "245", "Colégio Marista São Luis", "Colégio Núcleo", "Mandante", "Visitante", forcar_placar="VS")
-        renderizar_card_confronto("Semi-Final Ouro - Jogo 244", "244", "Escola Bem-Me-Quer", "Colégio Santa Maria", "Mandante", "Visitante", forcar_placar="VS")
+        # Placar atualizado dinamicamente diretamente do site oficial da liga
+        renderizar_card_confronto("Semi-Final Ouro - Jogo 245", "245", "Colégio Marista São Luis", "Colégio Núcleo", "Mandante", "Visitante")
+        renderizar_card_confronto("Semi-Final Ouro - Jogo 244", "244", "Escola Bem-Me-Quer", "Colégio Santa Maria", "Mandante", "Visitante")
         
     with tab_final_ouro:
         st.markdown("### 🏆 Final Ouro")
-        renderizar_card_confronto("Grande Final Ouro", None, "Vencedor Semi 1 Ouro", "Vencedor Semi 2 Ouro", "Finalista", "Finalista")
+        # Preenche automaticamente a primeira equipe vencedora da Semi-Final Ouro (e a segunda assim que ocorrer)
+        venc_semi_245 = resolver_equipe_jogo(df_jogos_todos, "245", "vencedor", "Vencedor Jogo 245")
+        venc_semi_244 = resolver_equipe_jogo(df_jogos_todos, "244", "vencedor", "Vencedor Jogo 244")
+        renderizar_card_confronto("Grande Final Ouro", None, venc_semi_245, venc_semi_244, "Vencedor Jogo 245", "Vencedor Jogo 244")
         
     with tab_mata_mata_bronze:
         st.markdown("### 🥉 Mata-Mata Bronze")
@@ -1184,7 +1188,6 @@ elif opcao == "Eliminatórias":
         
     with tab_semi_prata:
         st.markdown("### 🥈 Semi-Final Prata")
-        # Atualizado exatamente conforme a imagem oficial (Jogos 246 e 247)
         renderizar_card_confronto("Semi-Final Prata - Jogo 246", "246", "Colégio GGE", "Colégio Piedade", "Perdedor do Jogo 228", "Perdedor do Jogo 229", forcar_placar="VS")
         renderizar_card_confronto("Semi-Final Prata - Jogo 247", "247", "Colégio Apoio", "Colégio São José - Abreu e Lima", "Perdedor do Jogo 231", "Perdedor do Jogo 230", forcar_placar="VS")
         
@@ -1194,7 +1197,9 @@ elif opcao == "Eliminatórias":
         
     with tab_terceiro:
         st.markdown("### 🥉 Disputa Terceiro Lugar")
-        renderizar_card_confronto("Disputa de 3º Lugar Ouro", None, "Perdedor Semi 1 Ouro", "Perdedor Semi 2 Ouro", "3º Lugar", "3º Lugar")
+        perd_semi_245 = resolver_equipe_jogo(df_jogos_todos, "245", "perdedor", "Perdedor Jogo 245")
+        perd_semi_244 = resolver_equipe_jogo(df_jogos_todos, "244", "perdedor", "Perdedor Jogo 244")
+        renderizar_card_confronto("Disputa de 3º Lugar Ouro", None, perd_semi_245, perd_semi_244, "Perdedor Jogo 245", "Perdedor Jogo 244")
 
 elif opcao == "Jogos":
     botao_voltar_inicio("jogos")
@@ -1545,7 +1550,8 @@ elif opcao == "Jogos Gravados":
         ("Santa Maria x Apoio", "https://www.youtube.com/watch?v=IWydiKQdSvA&t=1062s"),
         ("Santa Maria x São Luiz", "https://www.youtube.com/watch?v=gaxXctACWH4"),
         ("Santa Maria A x Decisão - Oitavas de Final", "https://www.youtube.com/watch?v=PuhQLJOQRZw"),
-        ("Colégio GGE x Coégio Santa Maria", "https://www.youtube.com/watch?v=21_ppF6Y1yk")
+        ("Colégio GGE x Coégio Santa Maria", "https://www.youtube.com/watch?v=21_ppF6Y1yk"),
+        ("Santa Maria x Bem-me-Quer", "https://www.youtube.com/watch?v=T4Mu6LuYrk0")
     ]
     
     for i in range(0, len(videos_gravados), 2):
